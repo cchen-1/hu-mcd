@@ -1,0 +1,11 @@
+numpy
+scikit-learn
+scikit-image
+scikit-dimension
+matplotlib
+tqdm
+Pillow
+scipy
+timm
+pandas
+opencv-python
