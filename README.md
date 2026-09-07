@@ -119,6 +119,19 @@ $ python benchmark_methods.py
 
 Note that this requires you to have generated concepts for all three methods as described above.
 
+## Reproduction workflow
+
+For the pinned CPU environment, Imagenette smoke-data preparation, configurable
+SAM ViT-B engineering run, cache layout, and the path toward a paper-scale HPC
+run, see [docs/REPRODUCTION.md](docs/REPRODUCTION.md).
+
+## Bunya Phase 3 deployment
+
+The resource-conservative UQ Bunya deployment workflow is documented in
+[hpc/README.md](hpc/README.md). It uses CPU compute jobs for installation, a
+five-minute L40S probe, and a gated one-class GPU smoke test before any larger
+pilot is considered.
+
 ## License
 
 This project is licensed under the MIT License – see the [LICENSE](./LICENSE) file for details.

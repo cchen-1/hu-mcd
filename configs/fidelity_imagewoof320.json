@@ -1,0 +1,33 @@
+{
+  "experiment_name": "imagewoof2_320_golden_retriever_local_fidelity",
+  "dataset_name": "Imagewoof2-320",
+  "class_name": "golden_retriever",
+  "source_dir": "/home/chen/datasets/hu-mcd-fidelity-imagewoof320",
+  "model_name": "resnet50",
+  "layer_name": "global_pool",
+  "device": "cpu",
+  "torch_num_threads": 8,
+  "max_shortest_side": 300,
+  "train_images": 20,
+  "validation_images": 10,
+  "batch_size": 4,
+  "prototypes_per_concept": 3,
+  "n_concepts_to_plot": 8,
+  "segmentation": {
+    "algorithm": "sam",
+    "model_type": "vit_b",
+    "checkpoint": "/home/chen/models/sam/sam_vit_b_01ec64.pth",
+    "points_per_side": 16,
+    "min_mask_region_area": 256
+  },
+  "clustering": {
+    "algorithm": "sparse_subspace_clustering",
+    "n_clusters": null,
+    "min_cluster_size": 5,
+    "outlier_percentile": 1.0,
+    "subspace_dimensionality": null
+  },
+  "cache_root": "/home/chen/results/hu-mcd-fidelity-imagewoof320/cache",
+  "output_dir": "/home/chen/results/hu-mcd-fidelity-imagewoof320/output",
+  "seed": 43
+}

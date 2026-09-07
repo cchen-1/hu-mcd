@@ -1,0 +1,29 @@
+{
+  "class_name": "garbage_truck",
+  "source_dir": "/home/chen/datasets/hu-mcd-smoke",
+  "model_name": "resnet50",
+  "layer_name": "global_pool",
+  "device": "cpu",
+  "torch_num_threads": 8,
+  "max_shortest_side": 160,
+  "train_images": 3,
+  "validation_images": 2,
+  "batch_size": 2,
+  "segmentation": {
+    "algorithm": "sam",
+    "model_type": "vit_b",
+    "checkpoint": "/home/chen/models/sam/sam_vit_b_01ec64.pth",
+    "points_per_side": 8,
+    "min_mask_region_area": 128
+  },
+  "clustering": {
+    "algorithm": "sparse_subspace_clustering",
+    "n_clusters": 2,
+    "min_cluster_size": 2,
+    "outlier_percentile": 1.0,
+    "subspace_dimensionality": 1
+  },
+  "cache_root": "/home/chen/results/hu-mcd-smoke/cache",
+  "output_dir": "/home/chen/results/hu-mcd-smoke/output",
+  "seed": 43
+}

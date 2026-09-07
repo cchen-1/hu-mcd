@@ -1,0 +1,33 @@
+{
+  "experiment_name": "bunya_phase3_smoke_imagewoof320_golden_retriever",
+  "dataset_name": "Imagewoof2-320",
+  "class_name": "golden_retriever",
+  "source_dir": "/scratch/user/uqcche38/hu-mcd/data/phase3_smoke",
+  "model_name": "resnet50",
+  "layer_name": "global_pool",
+  "device": "cuda:0",
+  "torch_num_threads": 4,
+  "max_shortest_side": 300,
+  "train_images": 10,
+  "validation_images": 5,
+  "batch_size": 16,
+  "prototypes_per_concept": 3,
+  "n_concepts_to_plot": 8,
+  "segmentation": {
+    "algorithm": "sam",
+    "model_type": "vit_b",
+    "checkpoint": "/scratch/user/uqcche38/hu-mcd/models/sam_vit_b_01ec64.pth",
+    "points_per_side": 16,
+    "min_mask_region_area": 256
+  },
+  "clustering": {
+    "algorithm": "sparse_subspace_clustering",
+    "n_clusters": null,
+    "min_cluster_size": 5,
+    "outlier_percentile": 1.0,
+    "subspace_dimensionality": null
+  },
+  "cache_root": "/scratch/user/uqcche38/hu-mcd/cache/phase3_smoke",
+  "output_dir": "/scratch/user/uqcche38/hu-mcd/outputs/phase3_smoke",
+  "seed": 44
+}

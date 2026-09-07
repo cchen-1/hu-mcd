@@ -73,24 +73,64 @@ def save_concepts(top_concept_segms:list[tuple], imgs:list[classes.ImageClass],
                   concept_scores:np.ndarray, n_concepts:int, n_imgs_per_concepts:int,
                   folderpath:str):
 
-    # create a figure to plot the top prototypes for each concept
-    fig = plt.figure(figsize=(n_imgs_per_concepts * 2, 4 * n_concepts))
-    outer = gridspec.GridSpec(n_concepts, 1, wspace=0., hspace=0.3)
     # order the concept based on their importance (exclude orthogonal component)
     concept_order = concept_scores[:-1].argsort()[::-1]
-    # iterate over the concept in decreasing order of global importance (last on is the orthogonal complement)
+    selected_concepts = list(concept_order[:n_concepts-1]) + [len(concept_order)]
+    # Empty concepts are represented by coverage metrics, not whitespace in the figure.
+    selected_concepts = [
+        concept_idx for concept_idx in selected_concepts
+        if top_concept_segms[concept_idx]
+    ]
+    if not selected_concepts:
+        raise ValueError("No concept prototypes are available to plot")
+    # Use a landscape grid with up to three concepts per row. Within each concept,
+    # masked prototypes and boundary overlays are arranged as two horizontal rows.
+    single_prototype_layout = (
+        len(selected_concepts) == 1 and n_imgs_per_concepts == 1
+    )
+    concept_columns = min(3, len(selected_concepts))
+    concept_rows = int(np.ceil(len(selected_concepts) / concept_columns))
+    if single_prototype_layout:
+        figure_size = (4.4, 2.2)
+    else:
+        figure_size = (
+            max(3.4, 2.2 * n_imgs_per_concepts) * concept_columns,
+            4.2 * concept_rows,
+        )
+    fig = plt.figure(figsize=figure_size)
+    outer = gridspec.GridSpec(
+        concept_rows,
+        concept_columns,
+        wspace=0.25,
+        hspace=0.3,
+    )
+    # Iterate in decreasing importance; the final item is the orthogonal complement.
     print("[INFO] Saving concepts...")
-    for row, idx_concept in enumerate(list(concept_order[:n_concepts-1])+[len(concept_order)]):
+    for concept_position, idx_concept in enumerate(selected_concepts):
+        concept_row = concept_position // concept_columns
+        concept_column = concept_position % concept_columns
         top_segms = top_concept_segms[idx_concept]
         inner = gridspec.GridSpecFromSubplotSpec(
-        2, n_imgs_per_concepts, subplot_spec=outer[row], wspace=0, hspace=0.1
+            1 if single_prototype_layout else 2,
+            2 if single_prototype_layout else n_imgs_per_concepts,
+            subplot_spec=outer[concept_row, concept_column],
+            wspace=0,
+            hspace=0.1,
         )
         concept_folderpath = os.path.join(folderpath, str(idx_concept))
         # Ensure concept directory exists
         if not os.path.exists(concept_folderpath) and (idx_concept != len(concept_order)):
             os.makedirs(concept_folderpath)
-        for column, (img_idx, segm_idx) in enumerate(top_segms):
-            ax = plt.Subplot(fig, inner[column])
+        for prototype_column, (img_idx, segm_idx) in enumerate(top_segms):
+            masked_position = (
+                2 * prototype_column if single_prototype_layout else prototype_column
+            )
+            boundary_position = (
+                2 * prototype_column + 1
+                if single_prototype_layout
+                else prototype_column + n_imgs_per_concepts
+            )
+            ax = plt.Subplot(fig, inner[masked_position])
             segm = imgs[img_idx].segments[segm_idx]
             ax.imshow(resize(
                 segm.get_padded_img(
@@ -102,7 +142,7 @@ def save_concepts(top_concept_segms:list[tuple], imgs:list[classes.ImageClass],
             ))
             ax.set_xticks([])
             ax.set_yticks([])
-            if column == int(n_imgs_per_concepts / 2):
+            if prototype_column == 0:
                 ax.set_title(f"Concept: {idx_concept} (Score: {concept_scores[idx_concept]:.2f})")
             ax.grid(False)
             # exclude orthogonal complement
@@ -117,7 +157,7 @@ def save_concepts(top_concept_segms:list[tuple], imgs:list[classes.ImageClass],
                     resize(segm.mask, (224, 224))
                 )
             fig.add_subplot(ax)
-            ax = plt.Subplot(fig, inner[column + n_imgs_per_concepts])
+            ax = plt.Subplot(fig, inner[boundary_position])
             ax.imshow(
                 resize(
                     segmentation.mark_boundaries(
@@ -131,7 +171,7 @@ def save_concepts(top_concept_segms:list[tuple], imgs:list[classes.ImageClass],
             )
             ax.set_xticks([])
             ax.set_yticks([])
-            ax.set_title(segm.org_img.filename[-10:])
+            ax.set_xlabel(segm.org_img.filename[-10:])
             ax.grid(False)
             fig.add_subplot(ax)
             
