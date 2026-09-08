@@ -20,6 +20,7 @@ import classes
 from concept_explainer import ConceptExplainer
 from run_humcd import get_top_concept_segms, save_concepts
 from utils import utils_general, utils_mcd
+from utils.run_tracking import RunTracker, atomic_json
 
 
 REPO_ROOT = Path(__file__).resolve().parent
@@ -32,6 +33,7 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=REPO_ROOT / "configs" / "smoke_local.json",
     )
+    parser.add_argument("--run-id", help="Unique run ID; required and equal to job ID under Slurm")
     return parser.parse_args()
 
 
@@ -210,6 +212,11 @@ def main() -> None:
     args = parse_args()
     config_path = args.config.expanduser().resolve()
     config = json.loads(config_path.read_text(encoding="utf-8"))
+    with RunTracker(config, config_path, REPO_ROOT, args.run_id) as tracker:
+        run(config_path, tracker.config, tracker)
+
+
+def run(config_path: Path, config: dict, tracker: RunTracker) -> None:
     os.chdir(REPO_ROOT)
 
     seed = int(config["seed"])
@@ -240,7 +247,7 @@ def main() -> None:
     cache_root.mkdir(parents=True, exist_ok=True)
 
     started = time.perf_counter()
-    stage_elapsed_seconds: dict[str, float] = {}
+    stage_elapsed_seconds = tracker.stage_times
     class_name = config["class_name"]
     stage_started = time.perf_counter()
     explainer = ConceptExplainer(
@@ -255,6 +262,7 @@ def main() -> None:
     )
     if len(explainer.class_imgs) != int(config["train_images"]):
         raise RuntimeError("The requested number of training images was not loaded")
+    tracker.record_inputs("training", explainer.class_imgs)
     stage_elapsed_seconds["model_and_training_image_load"] = time.perf_counter() - stage_started
 
     stage_started = time.perf_counter()
@@ -346,6 +354,7 @@ def main() -> None:
     )
     if len(validation_images) != int(config["validation_images"]):
         raise RuntimeError("The requested number of validation images was not loaded")
+    tracker.record_inputs("validation", validation_images)
     stage_elapsed_seconds["validation_image_load"] = time.perf_counter() - stage_started
     stage_started = time.perf_counter()
     segment_images(validation_images, config, cache_root / "segments_validation")
@@ -410,6 +419,9 @@ def main() -> None:
     report_path = output_dir / "metrics_report.md"
     summary = {
         "status": "PASS",
+        **tracker.identity,
+        "git_commit": tracker.manifest["git_commit"],
+        "resolved_config_sha256": tracker.manifest["resolved_config_sha256"],
         "metric_scope": "engineering_fidelity_not_paper_result",
         "experiment_name": config.get("experiment_name", config_path.stem),
         "dataset_name": config.get("dataset_name", "unspecified"),
@@ -448,7 +460,7 @@ def main() -> None:
         "metrics_report": str(report_path.resolve()),
     }
     write_metrics_report(summary, report_path)
-    summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    atomic_json(summary_path, summary)
     print(json.dumps(summary, indent=2))
 
 

@@ -172,3 +172,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Local Bunya collection snapshots (may contain licensed image derivatives)
+/artifacts/bunya/
+
+# Local NotebookLM pilot sources and query results
+/artifacts/notebooklm/
+
+# Local experiment outputs; keep licensed image derivatives out of Git
+/outputs/

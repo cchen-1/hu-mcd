@@ -31,6 +31,7 @@ test -d data/phase3_smoke/val_imgs/golden_retriever_val
 test -f models/sam_vit_b_01ec64.pth
 
 /usr/bin/time -v python run_smoke.py \
-  --config hpc/configs/phase3_smoke_bunya.json
+  --config hpc/configs/phase3_smoke_bunya.json \
+  --run-id "${SLURM_JOB_ID:?Submit this script through Slurm}"
 echo "Phase 3 smoke status: PASS"
 echo "Finished (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)"

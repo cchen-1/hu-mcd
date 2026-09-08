@@ -19,11 +19,22 @@ sacct \
 
 echo
 echo "=== Requested resources ==="
-scontrol show job "$job_id" | grep -E \
-  'JobId=|JobState=|RunTime=|TimeLimit=|ReqTRES=|AllocTRES=|NodeList='
+if control_record="$(scontrol show job "$job_id" 2>&1)"; then
+  printf '%s\n' "$control_record" | grep -E \
+    'JobId=|JobState=|RunTime=|TimeLimit=|ReqTRES=|AllocTRES=|NodeList=' \
+    || true
+else
+  echo "Active controller record is no longer available for job $job_id."
+  echo "This is normal for older completed jobs; sacct remains authoritative."
+fi
 
 echo
 echo "=== jobstats ==="
 module purge
-module load jobstats/2024.08
-jobstats "$job_id"
+if module load jobstats/2024.08; then
+  if ! jobstats "$job_id"; then
+    echo "jobstats data is unavailable; use the sacct metrics above."
+  fi
+else
+  echo "jobstats/2024.08 could not be loaded; use the sacct metrics above."
+fi

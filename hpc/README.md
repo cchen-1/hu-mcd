@@ -178,8 +178,19 @@ scancel JOB_ID
 
 ## After the smoke gate
 
-Use the observed elapsed time, `MaxRSS`, peak GPU memory, and GPU utilisation to
-size the two-class pilot. The intended next pilot is Golden Retriever plus
-Airliner with 50 training and 20 validation images per class, SAM ViT-H,
-`min_cluster_size=10`, and one L40S. It is not included as a runnable job yet so
-it cannot be submitted accidentally before the evidence supports it.
+The current next milestone is a one-class reference reproduction using the
+paper/released-code configuration after the deployment and evaluation checks.
+The earlier 50/20 two-class pilot proposal is superseded by
+[the main-chat handover](../docs/MAIN_CHAT_HANDOVER.md) and
+[the reproduction audit](../docs/PAPER_REPRODUCTION_AUDIT.md).
+
+The existing smoke sbatch still selects the old code directory and ViT-B smoke
+configuration. A pushed commit or a prepared Git release alone does not update
+that launcher. No paper-scale job is configured or submitted by this change.
+
+
+## Collect existing results locally
+
+After your manual WSL SSH login, use the [local results collector](COLLECTOR.md)
+to retrieve existing job reports, logs and prototype sheets without submitting
+a job. It reuses your authenticated connection and keeps separate snapshots.
