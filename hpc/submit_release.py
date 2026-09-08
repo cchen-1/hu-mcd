@@ -111,10 +111,22 @@ def build_plan(args):
     if args.mode == "reference":
         if not plan["config"].get("save_scientific_records"):
             raise ValueError("Reference run must save scientific records")
-        plan["probe_launch"] = absolute_path(args.probe_launch)
-        if not re.fullmatch(r"[a-f0-9]{64}", args.probe_launch_sha256 or ""):
-            raise ValueError("Successful probe launch SHA256 is required before a reference run")
-        plan["probe_launch_sha256"] = args.probe_launch_sha256
+        if args.after_probe:
+            if not re.fullmatch(r"[1-9][0-9]*", args.after_probe) or args.probe_launch or args.probe_launch_sha256:
+                raise ValueError("Use one numeric after-probe job ID without a completed-probe override")
+            if not re.fullmatch(r"[a-f0-9]{40}", args.probe_commit or ""):
+                raise ValueError("Deferred probe requires its exact research commit")
+            plan["after_probe"] = args.after_probe
+            plan["probe_commit"] = args.probe_commit
+            plan["probe_launch"] = ROOT + "/launches/" + args.after_probe + "/launch_manifest.json"
+            plan["expected_probe_helpers"] = {
+                "probe_sha256": hashlib.sha256(Path(__file__).with_name("reference_probe.py").read_bytes()).hexdigest(),
+                "numerics_sha256": hashlib.sha256((Path(__file__).parent.parent / "utils/scientific_records.py").read_bytes()).hexdigest()}
+        else:
+            plan["probe_launch"] = absolute_path(args.probe_launch)
+            if not re.fullmatch(r"[a-f0-9]{64}", args.probe_launch_sha256 or ""):
+                raise ValueError("Successful probe launch SHA256 is required before a reference run")
+            plan["probe_launch_sha256"] = args.probe_launch_sha256
     if args.mode == "resource-probe":
         for key, path in (("probe", Path(__file__).with_name("reference_probe.py")),
                           ("numerics", Path(__file__).parent.parent / "utils/scientific_records.py")):
@@ -146,6 +158,9 @@ def render(plan, worker):
              "#SBATCH --mem=" + resources["memory"], "#SBATCH --time=" + resources["time"],
              "#SBATCH --output=" + ROOT + "/logs/" + log + "-%j.out",
              "#SBATCH --error=" + ROOT + "/logs/" + log + "-%j.err"]
+    if plan.get("after_probe"):
+        lines.append("#SBATCH --dependency=afterok:" + plan["after_probe"])
+        lines.append("#SBATCH --kill-on-invalid-dep=yes")
     if resources["gpu"]:
         lines.append("#SBATCH --gres=gpu:" + resources["gpu"])
     lines.extend([
@@ -180,6 +195,8 @@ def arguments(argv=None):
     p.add_argument("--selection-audit-sha256")
     p.add_argument("--dataset-manifest")
     p.add_argument("--dataset-manifest-sha256")
+    p.add_argument("--after-probe", help="Queue one reference run after this existing probe succeeds")
+    p.add_argument("--probe-commit", help="Exact research commit used by the existing deferred probe")
     p.add_argument("--probe-launch")
     p.add_argument("--probe-launch-sha256")
     p.add_argument("--config", type=Path)

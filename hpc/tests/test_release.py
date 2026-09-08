@@ -234,3 +234,34 @@ class ProbeGateTests(unittest.TestCase):
             plan["probe_launch_sha256"]=w.sha256(path)
             with self.assertRaises(ValueError):
                 w.verify_probe(plan,cfg)
+
+class DeferredReferenceTests(unittest.TestCase):
+    def test_render_waits_for_exact_existing_probe(self):
+        args=s.arguments(["--commit",SHA,"--mode","reference","--config",str(HPC/"configs/golden_retriever_reference.json"),
+                          "--cpus","8","--memory","32G","--time","12:00:00","--partition","gpu_cuda",
+                          "--qos","short","--gpu","l40s:1","--after-probe","28204575","--probe-commit",SHA])
+        plan,worker=s.build_plan(args)
+        script=s.render(plan,worker)
+        self.assertIn("#SBATCH --dependency=afterok:28204575",script)
+        self.assertIn("#SBATCH --kill-on-invalid-dep=yes",script)
+        self.assertEqual(plan["config"]["train_images"],400)
+        self.assertEqual(plan["config"]["validation_images"],50)
+        subprocess.run(["bash","-n"],input=script,text=True,check=True)
+
+    def test_deferred_probe_must_finish_and_match_job_code_and_inputs(self):
+        with tempfile.TemporaryDirectory() as td:
+            path=Path(td)/"launch.json"
+            cfg={"dataset_manifest_sha256":"a"*64,"sam_checkpoint_sha256":"b"*64,
+                 "resnet_checkpoint_sha256":"c"*64,"batch_size":8}
+            helpers={"probe_sha256":"d"*64,"numerics_sha256":"e"*64}
+            plan={"after_probe":"123","probe_commit":SHA,"probe_launch":str(path),"expected_probe_helpers":helpers}
+            record={"slurm_job_id":"123","actual_commit":SHA,"mode":"resource-probe",
+                    "status":"PROBE_COMPLETED","probe_report":{"status":"PASS"},"plan":{"config":cfg,**helpers}}
+            path.write_text(json.dumps(record))
+            self.assertEqual(w.verify_probe(plan,cfg),"123")
+            for key,value in (("status","STARTED"),("status","FAILED"),("slurm_job_id","124"),("actual_commit","0"*40)):
+                path.write_text(json.dumps({**record,key:value}))
+                with self.subTest(key=key,value=value),self.assertRaises(ValueError):w.verify_probe(plan,cfg)
+            record["plan"]["probe_sha256"]="0"*64
+            path.write_text(json.dumps(record))
+            with self.assertRaises(ValueError):w.verify_probe(plan,cfg)

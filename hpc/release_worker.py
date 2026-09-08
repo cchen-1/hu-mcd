@@ -85,9 +85,17 @@ def verify_inputs(config):
 
 
 def verify_probe(plan, config):
-    if sha256(plan["probe_launch"]) != plan["probe_launch_sha256"]:
+    if not plan.get("after_probe") and sha256(plan["probe_launch"]) != plan["probe_launch_sha256"]:
         raise ValueError("Probe launch identity changed")
     probe = json.loads(Path(plan["probe_launch"]).read_text())
+    if plan.get("after_probe"):
+        if str(probe.get("slurm_job_id")) != plan["after_probe"] or probe.get("actual_commit") != plan["probe_commit"]:
+            raise ValueError("Deferred probe job/commit identity mismatch")
+        if probe.get("mode") != "resource-probe":
+            raise ValueError("Deferred prerequisite is not the requested probe")
+        for key, expected in plan["expected_probe_helpers"].items():
+            if probe.get("plan", {}).get(key) != expected:
+                raise ValueError("Deferred probe helper identity mismatch")
     if probe.get("status") != "PROBE_COMPLETED" or probe.get("probe_report", {}).get("status") != "PASS":
         raise ValueError("A completed successful resource/correctness probe is required")
     for key in ("dataset_manifest_sha256", "sam_checkpoint_sha256", "resnet_checkpoint_sha256"):
@@ -195,6 +203,7 @@ def main():
                 raise ValueError("Config threads differ from allocation")
             if plan["mode"] == "reference":
                 record["successful_probe_job_id"] = verify_probe(plan, config)
+                record["successful_probe_launch_sha256"] = sha256(plan["probe_launch"])
             record["inputs_verified"] = verify_inputs(config)
             checkpoint = Path(config["segmentation"]["checkpoint"])
             if not checkpoint.is_file():

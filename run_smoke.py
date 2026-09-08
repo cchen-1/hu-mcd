@@ -15,6 +15,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from joblib import parallel_backend
 
 import classes
 from concept_explainer import ConceptExplainer
@@ -213,7 +214,9 @@ def main() -> None:
     config_path = args.config.expanduser().resolve()
     config = json.loads(config_path.read_text(encoding="utf-8"))
     with RunTracker(config, config_path, REPO_ROOT, args.run_id) as tracker:
-        run(config_path, tracker.config, tracker)
+        # Use allocated worker processes without multiplying BLAS threads per worker.
+        with parallel_backend("loky", inner_max_num_threads=1):
+            run(config_path, tracker.config, tracker)
 
 
 def run(config_path: Path, config: dict, tracker: RunTracker) -> None:
