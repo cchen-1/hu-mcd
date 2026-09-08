@@ -19,7 +19,7 @@ import torch
 import classes
 from concept_explainer import ConceptExplainer
 from run_humcd import get_top_concept_segms, save_concepts
-from utils import utils_general, utils_mcd
+from utils import utils_general, utils_mcd, scientific_records
 from utils.run_tracking import RunTracker, atomic_json
 
 
@@ -309,6 +309,8 @@ def run(config_path: Path, config: dict, tracker: RunTracker) -> None:
     weight_vector = (
         explainer.model.fc.weight.data.detach()[class_index].cpu().numpy()
     )
+    if config.get("save_scientific_records", False):
+        scientific_records.save_discovery(explainer, output_dir, class_index)
     concept_scores, _ = explainer.concept_quantification(weight_vector)
     completeness = float(
         utils_mcd.calc_completeness(weight_vector, explainer.concept_bases)
@@ -325,6 +327,9 @@ def run(config_path: Path, config: dict, tracker: RunTracker) -> None:
         norm_batch=False,
         n_jobs=1,
     )
+    if config.get("save_scientific_records", False):
+        scientific_records.save_split(explainer, explainer.class_imgs, train_concept_activations,
+                                      output_dir, "training", class_index)
     train_top_segments = get_top_concept_segms(
         concept_activations=train_concept_activations,
         n_segms_per_img=train_batch_sizes,
@@ -381,6 +386,9 @@ def run(config_path: Path, config: dict, tracker: RunTracker) -> None:
         norm_batch=False,
         n_jobs=1,
     )
+    if config.get("save_scientific_records", False):
+        scientific_records.save_split(explainer, validation_images, concept_activations,
+                                      output_dir, "validation", class_index)
     top_segments = get_top_concept_segms(
         concept_activations=concept_activations,
         n_segms_per_img=validation_batch_sizes,

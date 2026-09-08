@@ -1,0 +1,39 @@
+{
+  "experiment_name": "golden_retriever_released_code_reference",
+  "dataset_name": "ImageNet1k",
+  "class_name": "golden_retriever",
+  "source_dir": null,
+  "dataset_manifest": null,
+  "resnet_checkpoint": "/scratch/user/uqcche38/hu-mcd/models/torch/hub/checkpoints/resnet50_a1_0-14fe96d1.pth",
+  "model_name": "resnet50",
+  "layer_name": "global_pool",
+  "device": "cuda:0",
+  "torch_num_threads": null,
+  "max_shortest_side": 300,
+  "train_images": 400,
+  "validation_images": 50,
+  "batch_size": null,
+  "prototypes_per_concept": 10,
+  "n_concepts_to_plot": 10,
+  "segmentation": {
+    "algorithm": "sam",
+    "model_type": "vit_h",
+    "checkpoint": null,
+    "points_per_side": 32,
+    "min_mask_region_area": 256
+  },
+  "clustering": {
+    "algorithm": "sparse_subspace_clustering",
+    "n_clusters": null,
+    "min_cluster_size": 50,
+    "outlier_percentile": 1,
+    "subspace_dimensionality": null
+  },
+  "cache_root": "/scratch/user/uqcche38/hu-mcd/cache/reference",
+  "output_dir": "/scratch/user/uqcche38/hu-mcd/outputs/reference",
+  "seed": 43,
+  "save_scientific_records": true,
+  "dataset_manifest_sha256": null,
+  "sam_checkpoint_sha256": null,
+  "resnet_checkpoint_sha256": null
+}

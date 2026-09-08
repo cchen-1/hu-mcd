@@ -1,0 +1,39 @@
+{
+  "experiment_name": "golden_retriever_released_code_reference",
+  "dataset_name": "ImageNet1k",
+  "class_name": "golden_retriever",
+  "source_dir": "/scratch/user/uqcche38/hu-mcd/data/reference-golden-seed43-compat-v1",
+  "dataset_manifest": "/scratch/user/uqcche38/hu-mcd/data/reference-golden-seed43-compat-v1/dataset_manifest.json",
+  "resnet_checkpoint": "/scratch/user/uqcche38/hu-mcd/models/torch/hub/checkpoints/resnet50_a1_0-14fe96d1.pth",
+  "model_name": "resnet50",
+  "layer_name": "global_pool",
+  "device": "cuda:0",
+  "torch_num_threads": 2,
+  "max_shortest_side": 300,
+  "train_images": 400,
+  "validation_images": 50,
+  "batch_size": 8,
+  "prototypes_per_concept": 10,
+  "n_concepts_to_plot": 10,
+  "segmentation": {
+    "algorithm": "sam",
+    "model_type": "vit_h",
+    "checkpoint": "/scratch/user/uqcche38/hu-mcd/models/sam_vit_h_4b8939.pth",
+    "points_per_side": 32,
+    "min_mask_region_area": 256
+  },
+  "clustering": {
+    "algorithm": "sparse_subspace_clustering",
+    "n_clusters": null,
+    "min_cluster_size": 50,
+    "outlier_percentile": 1,
+    "subspace_dimensionality": null
+  },
+  "cache_root": "/scratch/user/uqcche38/hu-mcd/cache/reference",
+  "output_dir": "/scratch/user/uqcche38/hu-mcd/outputs/reference",
+  "seed": 43,
+  "dataset_manifest_sha256": "dafeafcaa64d2379a236500d443e18f8a27520b9a0ad0288e79bdab7c683cd74",
+  "sam_checkpoint_sha256": "a7bf3b02f3ebf1267aba913ff637d9a2d5c33d3173bb679e46d9f338c26f262e",
+  "resnet_checkpoint_sha256": "14fe96d1f9fb311a60490082d2077e6e60427dcfe21839ddf934cce948f72b0f",
+  "save_scientific_records": true
+}

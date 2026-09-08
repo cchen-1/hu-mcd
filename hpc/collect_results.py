@@ -20,12 +20,17 @@ import time
 import uuid
 
 PROFILES = {
+    "reference": {"name": "humcd-reference", "log": "reference", "output": "reference",
+                  "files": ["summary.json", "metrics_report.md",
+                            "training_prototypes/overview.png", "validation_prototypes/overview.png"]},
     "smoke": {"name": "humcd-p3-smoke", "log": "phase3-smoke", "output": "phase3_smoke",
               "files": ["summary.json", "metrics_report.md",
                         "training_prototypes/overview.png", "validation_prototypes/overview.png"]},
     "gpu-probe": {"name": "humcd-gpu-probe", "log": "gpu-probe", "output": "gpu_probe",
                   "files": ["gpu_probe.json"]},
 }
+SCIENTIFIC_FILES = ("discovery.npz", "discovery.json", "training.npz", "training_segments.json",
+                    "training_checks.json", "validation.npz", "validation_segments.json", "validation_checks.json")
 FIELDS = "JobID,JobName%100,User,State,Start,End,Elapsed,AllocCPUS,ReqMem,MaxRSS,ExitCode,NodeList"
 TERMINAL = {"COMPLETED", "FAILED", "CANCELLED", "TIMEOUT", "OUT_OF_MEMORY",
             "NODE_FAIL", "PREEMPTED", "BOOT_FAIL", "DEADLINE", "REVOKED"}
@@ -102,7 +107,7 @@ def parse_accounting(raw, job_id, profile):
 def inspect_summary(summary, profile):
     if not isinstance(summary, dict) or summary.get("status") != "PASS":
         raise ValueError("Summary must be a JSON object with status PASS")
-    if profile == "smoke":
+    if profile in ("smoke", "reference"):
         rate = summary["prototype_quality_proxy"]["validation"]["learned_concept_assignment_rate"]
         if rate == 0:
             return ["Zero validation assignment to learned concepts: execution PASS does not "
@@ -166,10 +171,15 @@ def collect(args, transport, cache=None):
     output = root + "/outputs/" + args.output_subdir
     selected = [(f"{root}/logs/{profile['log']}-{args.job_id}.{ext}",
                  f"logs/{profile['log']}-{args.job_id}.{ext}", True) for ext in ("out", "err")]
+    if args.profile == "reference":
+        selected.append((f"{root}/launches/{args.job_id}/launch_manifest.json",
+                         "results/launch_manifest.json", True))
     if args.run_layout:
         selected += [(output + "/" + f, "results/" + f, True)
                      for f in ("run_manifest.json", "resolved_config.json", "artifacts.json")]
     selected += [(output + "/" + f, "results/" + f, True) for f in profile["files"]]
+    if args.include_scientific:
+        selected += [(output + "/scientific/" + f, "results/scientific/" + f, True) for f in SCIENTIFIC_FILES]
     selected.append((output + "/progress.json", "results/progress.json", args.run_layout))
     published = {}
     verified_run = False
@@ -190,16 +200,25 @@ def collect(args, transport, cache=None):
                 data = local.read_bytes()
                 entry.update(status="reused" if reused else "downloaded", bytes=len(data),
                              sha256=hashlib.sha256(data).hexdigest())
-                if args.run_layout and relative.removeprefix("results/") in profile["files"] and not expected:
+                if args.run_layout and (relative.removeprefix("results/") in profile["files"] or relative.startswith("results/scientific/")) and not expected:
                     manifest["errors"].append("No producer checksum yet: " + relative)
                 if expected and (len(data) != expected.get("bytes") or entry["sha256"] != expected.get("sha256")):
                     manifest["errors"].append("Published checksum mismatch: " + relative)
                 if relative.endswith(".json"):
                     try:
                         parsed = json.loads(data)
+                        if relative == "results/launch_manifest.json":
+                            if (str(parsed.get("slurm_job_id")) != args.job_id
+                                    or parsed.get("actual_commit") != args.expected_commit
+                                    or parsed.get("plan", {}).get("commit") != args.expected_commit):
+                                raise ValueError("Launcher job/commit identity mismatch")
+                            manifest["launcher_provenance"] = parsed
                         if relative == "results/run_manifest.json":
                             if str(parsed.get("slurm_job_id")) != args.job_id or parsed.get("run_id") != args.job_id:
                                 raise ValueError("Run/job identity does not match requested Slurm job")
+                            if args.expected_commit and (parsed.get("git_commit") != args.expected_commit
+                                                         or parsed.get("git_dirty") is not False):
+                                raise ValueError("Research commit mismatch or dirty prepared release")
                             verified_run = True
                             manifest["run_provenance"] = parsed
                             manifest["artifact_attribution"] = (
@@ -254,12 +273,14 @@ def arguments(argv=None):
     parser.add_argument("job_id", help="Existing numeric Slurm job ID (no arrays)")
     parser.add_argument("--profile", choices=PROFILES, default="smoke")
     parser.add_argument("--host", default="bunya")
+    parser.add_argument("--expected-commit", help="Require this exact clean research commit")
     parser.add_argument("--remote-root", default="/scratch/user/uqcche38/hu-mcd")
     parser.add_argument("--output-subdir", help="Directory under remote outputs; default depends on profile")
     parser.add_argument("--run-layout", action="store_true", help="Collect outputs/runs/JOB_ID with required provenance")
     parser.add_argument("--max-file-mib", type=int, default=16, help="Hard per-file SFTP write limit (1-256 MiB)")
     parser.add_argument("--output-root", type=Path,
                         default=Path(__file__).resolve().parents[1] / "artifacts/bunya")
+    parser.add_argument("--include-scientific", action="store_true", help="Collect fitted bases, features, labels and reconstruction evidence")
     parser.add_argument("--watch", action="store_true", help="Bounded foreground polling")
     parser.add_argument("--interval", type=int, default=60, help="Seconds between polls, minimum 60")
     parser.add_argument("--max-polls", type=int, default=60)
@@ -268,8 +289,16 @@ def arguments(argv=None):
         parser.error("job_id must be a positive integer")
     if not re.fullmatch(r"/[A-Za-z0-9_./-]+", args.remote_root) or ".." in PurePosixPath(args.remote_root).parts:
         parser.error("remote-root must be an absolute path without whitespace, wildcards or '..'")
-    if args.run_layout and (args.output_subdir or args.profile != "smoke"):
-        parser.error("run-layout requires the smoke profile and no output-subdir override")
+    if args.expected_commit and not re.fullmatch(r"[a-f0-9]{40}", args.expected_commit):
+        parser.error("expected-commit must be a full lowercase SHA")
+    if args.include_scientific and not args.run_layout:
+        parser.error("include-scientific requires run-layout")
+    if args.expected_commit and not args.run_layout:
+        parser.error("expected-commit requires run-layout")
+    if args.profile == "reference" and (not args.run_layout or not args.expected_commit):
+        parser.error("reference requires run-layout and expected-commit")
+    if args.run_layout and (args.output_subdir or args.profile not in ("smoke", "reference")):
+        parser.error("run-layout requires smoke/reference and no output-subdir override")
     if not 1 <= args.max_file_mib <= 256:
         parser.error("max-file-mib must be between 1 and 256")
     args.output_subdir = "runs/" + args.job_id if args.run_layout else args.output_subdir or PROFILES[args.profile]["output"]

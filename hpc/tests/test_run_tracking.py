@@ -82,7 +82,7 @@ class RunTrackingTests(unittest.TestCase):
         (root/'logs').mkdir()
         for suffix in ('out','err'):
             (root/f'logs/phase3-smoke-123.{suffix}').write_text('log')
-        args = c.arguments(['123','--run-layout','--remote-root',str(root),'--output-root',str(root/'collected')])
+        args = c.arguments(['123','--run-layout','--remote-root',str(root),'--output-root',str(root/'collected'),'--include-scientific'])
         cache = {}
         with patch.dict(os.environ, {'SLURM_JOB_ID': '123'}):
             with t.RunTracker(self.config, root/'config.json', root, '123') as tracker:
@@ -97,12 +97,19 @@ class RunTrackingTests(unittest.TestCase):
                     path = tracker.output/name
                     path.parent.mkdir(parents=True, exist_ok=True)
                     path.write_text('final')
-                t.atomic_json(tracker.output/'summary.json', {'status':'PASS', **tracker.identity,
+                for name in c.SCIENTIFIC_FILES:
+                    path = tracker.output/'scientific'/name
+                    path.parent.mkdir(exist_ok=True)
+                    path.write_bytes(b'{}' if name.endswith('.json') else b'scientific data')
+                t.atomic_json(tracker.output/'summary.json' , {'status':'PASS', **tracker.identity,
                     'prototype_quality_proxy':{'validation':{'learned_concept_assignment_rate':0.5}}})
         job_state[0] = 'COMPLETED'
         _, final = c.collect(args,LocalTransport(),cache)
         self.assertEqual(final['collection_status'],'complete')
         self.assertEqual(final['progress']['status'],'PASS')
+        science=[f for f in final['files'] if f['local_path'].startswith('results/scientific/')]
+        self.assertEqual(len(science),len(c.SCIENTIFIC_FILES))
+        self.assertTrue(all(f['status']=='downloaded' for f in science))
         self.assertTrue(any(f['local_path']=='results/training_prototypes/overview.png' and f['status']=='reused' for f in final['files']))
         (tracker.output/'resolved_config.json').write_text('{}')
         _, invalid = c.collect(args,LocalTransport())

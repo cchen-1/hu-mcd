@@ -139,6 +139,11 @@ class RunTracker:
         try:
             index = {name: {'bytes': (self.output / name).stat().st_size,
                             'sha256': sha256(self.output / name)} for name in files}
+            scientific = self.output / 'scientific'
+            if scientific.is_dir():
+                for path in sorted(scientific.iterdir()):
+                    if path.is_file():
+                        index[str(path.relative_to(self.output))] = {'bytes': path.stat().st_size, 'sha256': sha256(path)}
             self.artifacts = index
             self.progress('PASS')
         except BaseException as error:
