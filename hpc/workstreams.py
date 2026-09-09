@@ -69,7 +69,7 @@ def collect(job, commit, destination, root='/scratch/user/uqcche38/hu-mcd'):
             else:result['files'].append(name)
         result['status']='COMPLETE' if not result['errors'] else 'INTEGRITY_ERROR';result['worker_status']=index['status']
     else:
-        for name in ['launch_manifest.json','evaluation_progress.json','inputs/input_audit_progress.json','inventory.json','anomalies.jsonl']:
+        for name in ['launch_manifest.json','evaluation_progress.json','mcd_progress.json','mcd_manifest.json','inputs/input_audit_progress.json','inventory.json','anomalies.jsonl']:
             t.download(remote+'/'+name,target/name)
     launch=target/'launch_manifest.json'
     mode=json.loads(launch.read_text()).get('mode') if launch.exists() else None
