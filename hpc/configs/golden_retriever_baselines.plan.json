@@ -1,0 +1,1424 @@
+{
+  "schema_version": 1,
+  "status": "PREPARATION_ONLY",
+  "prepared_on": "2026-09-09",
+  "workstream": "C",
+  "class_name": "golden_retriever",
+  "synset": "n02099601",
+  "authorization": {
+    "fit": false,
+    "submit_slurm": false,
+    "sample_new_inputs": false,
+    "fetch_remote_data": false,
+    "commit_or_push": false
+  },
+  "reference": {
+    "inspected_local_commit": "eeb27e9fb31122edbfda1109c69ab7e64b094941",
+    "upstream_commit": "168eb5bf1717ab46d1c84be86bd81f0c51861413",
+    "execution_commit": null,
+    "core_files_unchanged_from_upstream": true,
+    "source_sha256": {
+      "run_ace.py": "8ff2dff9cda037c1cd890395b926ebfbf897a9f43c4a41a96590c1a1432ae86f",
+      "run_mcd.py": "068e2fe1a949136edcdaa63656eb6c5d5a873f216920bdd7107a3c4d2e62d1c4",
+      "benchmark_methods.py": "879e756b7e280dee7b1eec94291ef32bed673b9d61cade47b42f9420e17f7637",
+      "classes.py": "74e080e1626918e545db3c629e5fcaadf466a22db4ae1865818958e66081a99f",
+      "concept_explainer.py": "d18b2ffcae728fe2d80fa3fbfbd61836a78786b3f2e2bf43cb10f9b197737a2c",
+      "utils/utils_ace.py": "f0d67262747b4ac03f659ffee4c57d9faf32bacc3a0e82e49dbb79e23a1b9e8b",
+      "utils/utils_general.py": "c4852b90006877eda342c3f03741e3b504e6357985c9800374e1a2749942c955",
+      "utils/utils_mcd.py": "f5aa7056c25c3b716cb3be7c7d32714daba76f7933493d9f5504a1839fb6f394"
+    }
+  },
+  "inventory": {
+    "scope": "Bounded known project paths inspected by Slurm28214251; local collection COMPLETE",
+    "parent_slurm_receipt": {
+      "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/inventory.json",
+      "sha256": "59e03a84268c20e350ebb92c0fe37f3b28499d525132184df8ab4b1793bd7d25",
+      "bytes": 16948
+    },
+    "baseline_job_ids": [],
+    "random_pool_paths": [],
+    "validated_reusable_caches": [],
+    "local_completed_evidence": "artifacts/bunya/final-28208840/report/REPORT.zh-en.md",
+    "interpretation": "No baseline candidates found at seven explicit names under runtime ROOT, ROOT/data and ROOT/cache. Worker only emits baseline_candidates when a matching path exists. This is not a recursive search or evidence that no random pool exists elsewhere. No baseline fitting cache has been validated for reuse.",
+    "evaluation_job_ids": [],
+    "active_queue_job_ids": null,
+    "scheduler_evidence": {
+      "source": "coordinator message reporting actual checks",
+      "reported_on": "2026-09-09",
+      "observed_at": null,
+      "head": "eeb27e9fb31122edbfda1109c69ab7e64b094941",
+      "sacct_result": "No baseline/evaluation submissions through coordinator check",
+      "squeue_result": "Empty queue",
+      "raw_receipt": {
+        "path": "artifacts/bunya/workstreams-20260909/STATUS.json",
+        "sha256": "b71c0cef3b7b5b1bf3c1e36fb131877aa92f7b584ccdae605f9c4c8dae310e67",
+        "bytes": 605
+      },
+      "interpretation": "Historical coordinator check: queue empty and no baseline/evaluation submissions through that check. No raw global sacct/squeue transcript with query window found in the supplied snapshot; do not treat this as a live queue state.",
+      "receipt_scope": "STATUS.json records B implementation/submitted=false and C preparation/submitted=false; it is not a raw global scheduler transcript."
+    },
+    "status": "COLLECTED_NO_BASELINE_CANDIDATES_IN_CHECKED_PATHS",
+    "baseline_candidates": [],
+    "baseline_candidates_field_present": false,
+    "scheduler_evidence_files": [
+      {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/sacct.psv",
+        "sha256": "85ff15c3dc2cc6bdfa9ede0742a9f6ddc31a494ddf1ef4549d48012e9abb3222",
+        "bytes": 197
+      },
+      {
+        "path": "artifacts/bunya/workstreams-20260909/initial-deploy.sacct",
+        "sha256": "66113a4189f41c569e4532df29b1eb629bd4622345c9ff2c794b7c81e4cc74bf",
+        "bytes": 138
+      },
+      {
+        "path": "artifacts/bunya/workstreams-20260909/A-input-audit.submission.json",
+        "sha256": "14691618501bbc94f642978af710f77e4de590bc26269c70593fba3818f044cc",
+        "bytes": 337
+      },
+      {
+        "path": "artifacts/bunya/workstreams-20260909/STATUS.json",
+        "sha256": "b71c0cef3b7b5b1bf3c1e36fb131877aa92f7b584ccdae605f9c4c8dae310e67",
+        "bytes": 605
+      }
+    ],
+    "historical_empty_queue": "Coordinator-reported pre-inventory snapshot only; current queue not queried by C.",
+    "scan": {
+      "roots": [
+        "/scratch/user/uqcche38/hu-mcd",
+        "/scratch/user/uqcche38/hu-mcd/data",
+        "/scratch/user/uqcche38/hu-mcd/cache"
+      ],
+      "names": [
+        "random",
+        "random_acts",
+        "acts",
+        "acts_mcd",
+        "segms_val",
+        "self_repr_matrices_mcd",
+        "self_repr_matrices_humcd"
+      ],
+      "recursive": false,
+      "candidate_listing_limit": 30,
+      "other_scans": [
+        "outputs/runs/*/summary.json",
+        "launches/*/launch_manifest.json",
+        "data immediate children",
+        "cache immediate children"
+      ],
+      "scope_note": "Only these known paths/patterns. No arbitrary nested paths, other user/project storage or global pool search."
+    },
+    "job": {
+      "job_id": "28214251",
+      "status": "COMPLETED",
+      "exit_code": "0:0",
+      "elapsed_seconds": 49,
+      "resource_type": "CPU only",
+      "cpus": 2,
+      "memory": "8G",
+      "host": "bun155",
+      "commit": "94369b79a78ca534433da622268c3a9afea9d293",
+      "worker_sha256": "d7db42a6763ffb2234669fbae03f5e6ea3e0d7d0ac749a0caff35ed01ca0a929",
+      "started_at_utc": "2026-09-09T05:03:37.803828+00:00",
+      "finished_at_utc": "2026-09-09T05:04:23.620705+00:00",
+      "worker_status": "PASS",
+      "inventory_errors": [],
+      "collection_status": "COMPLETE",
+      "collection_errors": [],
+      "timing_note": "49 seconds is Slurm elapsed duration of a CPU-only job, not a measured TotalCPU value."
+    },
+    "evidence": {
+      "inventory.json": {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/inventory.json",
+        "sha256": "59e03a84268c20e350ebb92c0fe37f3b28499d525132184df8ab4b1793bd7d25",
+        "bytes": 16948
+      },
+      "launch_manifest.json": {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/launch_manifest.json",
+        "sha256": "74a82947955d84c0b9cd5b72eacb0d37d791349d56db811f2b80bc45b333998b",
+        "bytes": 1447
+      },
+      "sacct.psv": {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/sacct.psv",
+        "sha256": "85ff15c3dc2cc6bdfa9ede0742a9f6ddc31a494ddf1ef4549d48012e9abb3222",
+        "bytes": 197
+      },
+      "collection.json": {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/collection.json",
+        "sha256": "de28226a0caa518cb7af91d42b80da9e1383f3bd1cdae5544077e7a964fc0180",
+        "bytes": 2173
+      },
+      "actual_config.json": {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/actual_config.json",
+        "sha256": "73dffddbb7a119f9d650bbd605b3bc43afcaf6da60e12c5b7a74d79fc451ff4e",
+        "bytes": 306
+      },
+      "artifacts.json": {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/artifacts.json",
+        "sha256": "51f8e270f0a52f2adfcd14cd322d2414ba2470ffd93235a0af39fc54b0ae941f",
+        "bytes": 7403
+      },
+      "anomalies.jsonl": {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/anomalies.jsonl",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "job.err": {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/job.err",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "job.out": {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/job.out",
+        "sha256": "7af4b87f10cff338ac79af2e285489d1a4099892fa29f044ca80859eedad6774",
+        "bytes": 34
+      },
+      "inventory-collection.json": {
+        "path": "artifacts/bunya/workstreams-20260909/inventory-collection.json",
+        "sha256": "804af9113ab089c393d924a879bacb68a31618962897f23b6be4b541f16d6b69",
+        "bytes": 2268
+      },
+      "STATUS.json": {
+        "path": "artifacts/bunya/workstreams-20260909/STATUS.json",
+        "sha256": "b71c0cef3b7b5b1bf3c1e36fb131877aa92f7b584ccdae605f9c4c8dae310e67",
+        "bytes": 605
+      },
+      "initial-deploy.sacct": {
+        "path": "artifacts/bunya/workstreams-20260909/initial-deploy.sacct",
+        "sha256": "66113a4189f41c569e4532df29b1eb629bd4622345c9ff2c794b7c81e4cc74bf",
+        "bytes": 138
+      },
+      "A-input-audit.submission.json": {
+        "path": "artifacts/bunya/workstreams-20260909/A-input-audit.submission.json",
+        "sha256": "14691618501bbc94f642978af710f77e4de590bc26269c70593fba3818f044cc",
+        "bytes": 337
+      },
+      "inventory_worker_source": {
+        "path": "hpc/workstream_inventory.py",
+        "sha256": "da81914a2fe0aefea1aff5ba81185bedf5edb928ee9f9792f7f17e0b32029579",
+        "bytes": 1922
+      }
+    },
+    "golden_confirmation": {
+      "path": "/scratch/user/uqcche38/hu-mcd/outputs/runs/28208840/summary.json",
+      "sha256": "8b6cddb7fe49e8208144b5804db9e8884e732551d7aa221b1002480024170d8d",
+      "status": "PASS",
+      "commit": "eeb27e9fb31122edbfda1109c69ab7e64b094941",
+      "class_name": "golden_retriever",
+      "job_id": "28208840",
+      "mode": null
+    },
+    "data_entries": [
+      {
+        "name": "phase3_smoke",
+        "directory": true,
+        "manifest": "/scratch/user/uqcche38/hu-mcd/data/phase3_smoke/dataset_manifest.json"
+      },
+      {
+        "name": "reference-golden-seed43-compat-v1",
+        "directory": true,
+        "manifest": "/scratch/user/uqcche38/hu-mcd/data/reference-golden-seed43-compat-v1/dataset_manifest.json"
+      },
+      {
+        "name": "reference-golden-seed43-compat-v1.publish.lock",
+        "directory": false,
+        "manifest": null
+      },
+      {
+        "name": "reference-golden-seed43-rgb",
+        "directory": true,
+        "manifest": "/scratch/user/uqcche38/hu-mcd/data/reference-golden-seed43-rgb/dataset_manifest.json"
+      },
+      {
+        "name": "reference-golden-seed43-rgb.publish.lock",
+        "directory": false,
+        "manifest": null
+      }
+    ],
+    "cache_entries": [
+      {
+        "name": "phase3_smoke",
+        "directory": true,
+        "manifest": null
+      },
+      {
+        "name": "pip",
+        "directory": true,
+        "manifest": null
+      },
+      {
+        "name": "runs",
+        "directory": true,
+        "manifest": null
+      }
+    ]
+  },
+  "fixed_inputs": {
+    "manifest": "hpc/manifests/golden_retriever_seed43.json",
+    "manifest_file_sha256": "f4e181d050ada745454fadb52627a113ed70b2b6b257cd642e2e53e2ce6d0022",
+    "dataset_manifest_sha256": "dafeafcaa64d2379a236500d443e18f8a27520b9a0ad0288e79bdab7c683cd74",
+    "training": 400,
+    "validation": 50,
+    "preserve_original_order": true,
+    "preserve_validation_rgb_compatibility_mapping": true,
+    "new_input_manifests": null
+  },
+  "model": {
+    "name": "resnet50",
+    "timm": "0.6.13",
+    "checkpoint_sha256": "14fe96d1f9fb311a60490082d2077e6e60427dcfe21839ddf934cce948f72b0f",
+    "checkpoint_path": null,
+    "max_shortest_side": 300,
+    "input_size": [
+      3,
+      224,
+      224
+    ],
+    "precision": {
+      "cudnn_allow_tf32": true,
+      "matmul_allow_tf32": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "deterministic_algorithms": false,
+      "float32_matmul_precision": "highest"
+    },
+    "upstream_cli_batch_size": 64,
+    "proposed_batch_size": 8,
+    "batch_size_approved": false,
+    "batch_note": "8 aligns with current HU-MCD/B precision contract; batch-size changes can alter TF32 floating-point outputs. Record as execution difference, not bitwise equivalence."
+  },
+  "ace": {
+    "status": "PREPARATION_ONLY",
+    "protocol_choice": null,
+    "layer_name": "global_pool",
+    "discovery_images": 50,
+    "segmentation": {
+      "algorithm": "slic",
+      "n_segments": [
+        15,
+        50,
+        80
+      ],
+      "sigma": 1,
+      "compactness": 50,
+      "min_area_strict_gt": 0.001,
+      "dedup_jaccard_strict_gt": 0.5,
+      "label_loop": "range(img_masked.max())",
+      "max_label_omission": "C-002; no silent correction"
+    },
+    "features": {
+      "cropping_mode": 1,
+      "use_masks": false,
+      "masking_mode": null,
+      "erosion_threshold": 1.0,
+      "fill_value": 0.4588,
+      "norm_acts": false,
+      "training_delete_zeros": true
+    },
+    "clustering": {
+      "algorithm": "kmeans",
+      "n_clusters": 25,
+      "random_state": 43,
+      "norm_acts": false,
+      "min_size_inclusive": 50,
+      "min_image_coverage_inclusive": 0.5,
+      "max_samples_for_cav": 50,
+      "cav_positive_selection": "closest to centroid, mode=max; not diverse plotting selection"
+    },
+    "tcav": {
+      "num_runs": 20,
+      "mimic_segm": false,
+      "random_pool_requested_count": 2000,
+      "random_control_positive_count": 50,
+      "negatives_per_run": 50,
+      "positive_label": 1,
+      "negative_label": 0,
+      "control_cluster_label": -1,
+      "training_mode": "sklearn",
+      "classifier": "SGDClassifier",
+      "alpha": 0.01,
+      "max_iter": 1000,
+      "tol": 0.001,
+      "loss": "default hinge",
+      "classifier_random_state": "None upstream; capture global NumPy RNG",
+      "cav_holdout_fraction": 0.2,
+      "cav_holdout_random_state": 42,
+      "cav_holdout_stratify": null,
+      "gradient_test_image_count": 50,
+      "gradient_objective": "cross_entropy(model_output,target_class), mean reduction",
+      "score": "mean(gradient dot normalized CAV < 0)",
+      "significance": "scipy.stats.ttest_rel, two-sided default, retain p<0.01",
+      "max_cav_fits_if_25_concepts": 520,
+      "actual_negative_run_rule": "first draw reduces pool to50; subsequent runs permute the same set per concept",
+      "not_the_same_as_random_grid_baseline": true
+    },
+    "discovery_subset_options": [
+      {
+        "id": "frozen_prefix50",
+        "recommended": true,
+        "rule": "Use rows 1..50 in frozen manifest training order; prepared ordinal filenames preserve this order. Create a new derived manifest referencing parent row/id/hash, never rewrite parent400.",
+        "new_sampling": false,
+        "reason": "Nested subset of existing seed43 candidate order; no additional selection RNG or outcome-based choice."
+      },
+      {
+        "id": "reshuffle_within_frozen400",
+        "recommended": false,
+        "rule": "After explicit approval, use a declared RNG algorithm/version and seed43 to select50 without replacement from the existing400; persist all chosen parent rows and order.",
+        "new_sampling": true,
+        "reason": "Independent nested subset, still no new images; changes ACE sample identity and is not needed merely to reproduce defaults."
+      }
+    ],
+    "gradient_test_options": [
+      {
+        "id": "upstream_same_training_pool",
+        "count": 50,
+        "rule": "Freeze one shuffle-based sample from the original400 training entries; allow and explicitly record discovery overlap. Never point this loader only at the ACE50 staging directory.",
+        "scientific_difference": "Faithful to shared source-directory behavior; exact published identities unavailable."
+      },
+      {
+        "id": "disjoint_training_control",
+        "count": 50,
+        "rule": "For prefix50 discovery, proposed rows51..100 of frozen400; otherwise choose deterministically from remaining350 only after approval. Save separate manifest.",
+        "scientific_difference": "Explicit training-only holdout policy absent from upstream; do not call it an unchanged protocol."
+      }
+    ],
+    "negative_pool_plan": {
+      "status": "USER_JUDGMENT_REQUIRED_NO_POOL_FOUND_IN_BOUNDED_SCAN",
+      "selected_variant": null,
+      "selected_population_policy": null,
+      "source_root": null,
+      "population_split_proposal": "ImageNet1k training only",
+      "new_sampling_seed_proposal": 43,
+      "manifest_fields": [
+        "source_id",
+        "synset",
+        "split",
+        "original_path",
+        "input_path",
+        "original_sha256",
+        "input_sha256",
+        "mode",
+        "selection_rank",
+        "role"
+      ],
+      "population_alternatives": [
+        "Exclude golden_retriever synset; allow the other nine target classes as negatives (class-vs-rest).",
+        "Exclude all ten target synsets if the pool is intended to be shared across the ten-class study; changes negative population.",
+        "Reuse an existing documented pool only after label/split/content/hash audit and explicit policy decision."
+      ],
+      "variants": [
+        {
+          "id": "upstream_code_reference",
+          "unique_pool_requested": 2000,
+          "control_positive_from_same_pool": 50,
+          "negative_set_rule": "Preserve first-draw reuse bug; log actual identities per concept/run and control intersections.",
+          "interpretation": "Reproduces released implementation, not evidence of 20 independent negative concepts."
+        },
+        {
+          "id": "separate_corrected_protocol",
+          "negative_pool": 2000,
+          "disjoint_random_control_positives": 50,
+          "total_unique_images": 2050,
+          "negative_set_rule": "Would need explicit choice of fresh per-run draws and pairing across concepts/control before implementation; not approved.",
+          "interpretation": "Scientific variant, not an engineering fix. Can reuse compatible feature extraction if separately authorized."
+        }
+      ],
+      "requirements": [
+        "No validation images in discovery, negatives, random control or TCAV gradient tests.",
+        "Original IDs AND hashes must exclude frozenGolden400/50; audit duplicate content and class labels.",
+        "No automatic fallback to fewer images: source requests2000 despite CLI recommendation>=1000; retained usable feature count must also be reported.",
+        "Do not silently remove same-pool positive/negative overlap from code-reference variant; unresolved leakage must be decided before fit.",
+        "Report format failures; any eligibility replacement order must be explicitly approved and recorded."
+      ],
+      "inventory_evidence": {
+        "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/inventory.json",
+        "sha256": "59e03a84268c20e350ebb92c0fe37f3b28499d525132184df8ab4b1793bd7d25",
+        "bytes": 16948
+      },
+      "inventory_note": "No candidate at the explicitly inspected project paths. Source root remains null; no new negative pool selected or authorized."
+    }
+  },
+  "mcd": {
+    "status": "PREPARATION_ONLY",
+    "protocol": "benchmark_reference",
+    "layer_name": "layer4",
+    "training_images": 400,
+    "validation_images": 50,
+    "segmentation": "one all-ones full-image mask; no SAM/SLIC",
+    "features": {
+      "cropping_mode": 0,
+      "use_masks": false,
+      "masking_mode": null,
+      "erosion_threshold": 1.0,
+      "norm_acts_before_spatial_conversion": false,
+      "expected_raw_shape": [
+        400,
+        2048,
+        7,
+        7
+      ],
+      "spatial_rows_before_zero_removal": 19600,
+      "spatial_row_l2_normalization": true,
+      "drop_all_zero_training_spatial_rows": true
+    },
+    "clustering": {
+      "algorithm": "sparse_subspace_clustering",
+      "outlier_quantile": 0.75,
+      "outlier_rule": "row_L1 > quantile(.75); ties mean not necessarily exactly25%",
+      "recompute_ssc_on_inliers": true,
+      "ssc_tau": 1.0,
+      "ssc_gamma": 10.0,
+      "cluster_candidates": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "standalone_prototype_candidates": [
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "min_size": 0,
+      "min_coverage": 0.0,
+      "max_samples": null,
+      "basis": "PCA with skdim lPCA FO intrinsic dimension; cap by floor(2048/n_concepts)",
+      "threshold": 0.5,
+      "stop_rule": "first completeness strictly>0.5; never extend beyond19 silently",
+      "save_all_search_steps": true,
+      "exhaustion_policy": "record threshold_reached=false; pause interpretation and request decision"
+    },
+    "random_image_pool_required": false
+  },
+  "benchmark_contract_with_B": {
+    "modes": [
+      "sdc",
+      "ssc"
+    ],
+    "validation_manifest": "exact original50 plus existing one-image RGB compatibility mapping",
+    "validation_delete_zeros": false,
+    "raw_humcd_validation_segments": 569,
+    "filtered_prototype_segments_not_benchmark_inputs": 534,
+    "hu_mcd_zero_rows": 35,
+    "norm_batch": true,
+    "ace_assignment": "nearest surviving kmeans cluster, global TCAV rank, require p<.01; zero vector returnsNone",
+    "mcd_assignment": "interpolated per-spatial oblique score argmax incl complement; mean local relevance rank; complement excluded from flipping",
+    "flipped_state_inference": {
+      "cropping_mode": 0,
+      "use_masks": true,
+      "masking_mode": 1,
+      "erosion_threshold": 1.0
+    },
+    "aggregation": "step contributes only if count>0.75*50, therefore at least38; preserve variable support",
+    "endpoint_policy": "preserve upstream per-method control flow, record omitted terminal states",
+    "cache_shared_outputs": "B Random trajectories/predictions only if all actual inputs, masks, RNG order, preprocessing, precision, code and method-independent prediction signatures match; do not run Random again by default"
+  },
+  "resource_proposals": [
+    {
+      "stage": "ACE SLIC plus ResNet features and50 gradient tests",
+      "allocation": {
+        "gpu": "1 L40S",
+        "cpus": 4,
+        "memory_gib": 16,
+        "walltime": "01:00:00"
+      },
+      "estimated_minutes": [
+        10,
+        40
+      ],
+      "measured": false,
+      "assumptions": "50 discovery+50val, at most roughly7250/7250 SLIC candidates before de-dup per split,2000 random whole images,50 gradient tests; no SAM. Stream batches rather than retain all crop tensors."
+    },
+    {
+      "stage": "ACE kmeans and at most520 CAV fits",
+      "allocation": {
+        "gpu": 0,
+        "cpus": 4,
+        "memory_gib": 16,
+        "walltime": "01:00:00"
+      },
+      "estimated_minutes": [
+        5,
+        30
+      ],
+      "measured": false,
+      "assumptions": "Uses saved ResNet features/gradients;20 runs per retained concept plus control; no refits per benchmark direction."
+    },
+    {
+      "stage": "MCD unmasked layer4 feature extraction",
+      "allocation": {
+        "gpu": "1 L40S",
+        "cpus": 4,
+        "memory_gib": 16,
+        "walltime": "00:30:00"
+      },
+      "estimated_minutes": [
+        2,
+        10
+      ],
+      "measured": false,
+      "assumptions": "450 images, batch8, same fixed input identities/preprocessing/weights."
+    },
+    {
+      "stage": "MCD SSC/inlier SSC and3..19 search",
+      "allocation": {
+        "gpu": 0,
+        "cpus": 8,
+        "memory_gib": 64,
+        "walltime": "04:00:00"
+      },
+      "estimated_minutes": [
+        30,
+        180
+      ],
+      "measured": false,
+      "assumptions": "At most19600 normalized spatial rows; dense initial coherence about1.43GiBfloat32 or2.86GiBfloat64, plus per-worker copies/solver state; actual solver time unknown; no guaranteed bound."
+    },
+    {
+      "stage": "Later ACE+MCD C-Insertion/C-Deletion from fitted caches",
+      "allocation": {
+        "gpu": "1 L40S",
+        "cpus": 4,
+        "memory_gib": 16,
+        "walltime": "01:00:00"
+      },
+      "estimated_minutes": [
+        10,
+        40
+      ],
+      "measured": false,
+      "assumptions": "Up to2600 ACE states plus2000 MCD states before upstream endpoint effects, existing50val; do not repeat B Random."
+    }
+  ],
+  "resource_alternative": "Split GPU feature/gradient extraction from CPU fitting to avoid holding a GPU during SSC; if an authorized task hits the budget, keep stage caches and report, never auto-retry at larger size.",
+  "run_contract": {
+    "output_root": null,
+    "cache_root": null,
+    "required_identity": [
+      "execution_commit",
+      "protocol_id",
+      "resolved_config_sha256",
+      "parent_manifest_sha256",
+      "all_derived_input_manifests",
+      "weights_sha256",
+      "installed_masking_source_hashes",
+      "environment_versions",
+      "precision",
+      "batch_size",
+      "all_rng_states",
+      "slurm_allocation"
+    ],
+    "required_artifacts": [
+      "stage_progress.jsonl",
+      "anomalies.jsonl",
+      "input_mapping.json",
+      "raw_features_and_logits",
+      "mask_and_feature_row_mapping",
+      "zero_feature_counts",
+      "ACE_negative_and_control_IDs_per_run",
+      "ACE_CAV_weights_holdout_indices_accuracy_and_TCAV_pvalues",
+      "MCD_initial_and_inlier_SSC_outlier_mask",
+      "MCD_all_k_labels_dimensions_completeness",
+      "fitted_bases_and_reconstruction_checks",
+      "per_image_per_step_predictions_and_masks",
+      "collector_receipt"
+    ],
+    "job_submission_gate": "Bounded inventory28214251 reconciled with local collection and coordinator no-baseline-submission evidence. Still requires specific fit authorization, resolved ACE scientific/input choices and exact execution paths/commit. No pool selected; PREPARATION_ONLY."
+  },
+  "anomalies": [
+    {
+      "id": "C-001",
+      "stage": "ACE CAV training",
+      "affected_jobs": [],
+      "affected_scope": "C preparation / future baseline; shared B boundary where noted",
+      "evidence": "classes.py:457-492",
+      "evidence_type": "CONFIRMED_LOCAL_SYNTHETIC",
+      "finding": "The first iteration replaces the full random activation pool with 50 rows; all 20 runs thereafter use the same negative identity set per concept. Different concepts can choose different first sets.",
+      "possible_impact": "The stated independent-negative-run interpretation is false; TCAV significance cannot be interpreted as 20 independent negative pools.",
+      "handling": "Hold ACE fit pending explicit choice of upstream-code reference versus a separately named correction; do not silently fix.",
+      "status": "SCIENTIFIC_DECISION_REQUIRED"
+    },
+    {
+      "id": "C-002",
+      "stage": "ACE SLIC discovery and validation",
+      "affected_jobs": [],
+      "affected_scope": "C preparation / future baseline; shared B boundary where noted",
+      "evidence": "classes.py:46-65",
+      "evidence_type": "CONFIRMED_LOCAL_SYNTHETIC",
+      "finding": "range(img_masked.max()) excludes the largest SLIC label. With installed skimage 0.19.3 labels start at 1; zero is empty and the final real label is omitted.",
+      "possible_impact": "Changes available segments, clustering and evaluation coverage; source fidelity is not algorithmic correctness.",
+      "handling": "Record upstream behavior in any authorized code-reference baseline; an all-label correction requires an explicit separate protocol.",
+      "status": "SCIENTIFIC_DECISION_REQUIRED"
+    },
+    {
+      "id": "C-003",
+      "stage": "ACE random control construction",
+      "affected_jobs": [],
+      "affected_scope": "C preparation / future baseline; shared B boundary where noted",
+      "evidence": "concept_explainer.py:343-400",
+      "evidence_type": "CONFIRMED_SOURCE_POTENTIAL_OVERLAP",
+      "finding": "The 50 positive random-control images and each negative set are drawn from the same random pool without excluding overlap.",
+      "possible_impact": "The same identity may receive positive and negative CAV labels and occur across its train/test split. Actual overlap has not been measured.",
+      "handling": "Save identity-level overlap matrices. Decide shared-pool reference versus disjoint control pool before fitting.",
+      "status": "INPUT_PROTOCOL_UNRESOLVED"
+    },
+    {
+      "id": "C-004",
+      "stage": "ACE TCAV gradient tests",
+      "affected_jobs": [],
+      "affected_scope": "C preparation / future baseline; shared B boundary where noted",
+      "evidence": "concept_explainer.py:403-447",
+      "evidence_type": "CONFIRMED_SOURCE_POTENTIAL_OVERLAP",
+      "finding": "50 shuffled images are loaded from the same target-class source directory used for discovery, without exclusion.",
+      "possible_impact": "Discovery/gradient-test overlap is possible; a directory containing only ACE50 makes it certain. Do not reuse the fixed validation50 as a tuning/control set.",
+      "handling": "Provide separate named discovery and gradient manifests; choose upstream-overlap reference or disjoint training-only control explicitly.",
+      "status": "INPUT_PROTOCOL_UNRESOLVED"
+    },
+    {
+      "id": "C-005",
+      "stage": "ACE TCAV significance and gradients",
+      "affected_jobs": [],
+      "affected_scope": "C preparation / future baseline; shared B boundary where noted",
+      "evidence": "utils/utils_ace.py:141-179; utils/utils_general.py:104-133; classes.py:496-506",
+      "evidence_type": "CONFIRMED_SOURCE",
+      "finding": "Paired t-test compares run indices although negative sets are not paired across concepts/control. TCAV uses negative directional derivatives of cross-entropy, not positive derivatives of the target logit.",
+      "possible_impact": "The estimand and pairing assumptions need disclosure; NaN p-values can silently fail p<0.01.",
+      "handling": "Preserve formula for a code-reference protocol; log all p-values, NaNs, variances, CAV accuracies and sample identities. Do not silently replace the loss or statistical test.",
+      "status": "SCIENTIFIC_DECISION_REQUIRED"
+    },
+    {
+      "id": "C-006",
+      "stage": "Input loading and cache provenance",
+      "affected_jobs": [],
+      "affected_scope": "C preparation / future baseline; shared B boundary where noted",
+      "evidence": "concept_explainer.py:36-55,99-130,210-222; classes.py:83-108,356-365; benchmark_methods.py:559-578",
+      "evidence_type": "CONFIRMED_SOURCE",
+      "finding": "Loader skips unreadable files and may return fewer than requested; segmentation keys use basename, activation keys omit content/weights/precision, SSC keys only class/count; benchmark pickle keys omit much protocol identity.",
+      "possible_impact": "Silent replacement, cache collision or stale-result reuse can invalidate inputs and outputs.",
+      "handling": "Engineering wrapper must verify exact manifests/counts and content-addressed cache metadata before use; independent directories; never use a found cache solely by filename.",
+      "status": "ENGINEERING_WRAPPER_REQUIRED"
+    },
+    {
+      "id": "C-007",
+      "stage": "MCD cluster search",
+      "affected_jobs": [],
+      "affected_scope": "C preparation / future baseline; shared B boundary where noted",
+      "evidence": "run_mcd.py:175-207; benchmark_methods.py:617-643",
+      "evidence_type": "CONFIRMED_SOURCE",
+      "finding": "Standalone runner searches 5..19; benchmark searches 3..19, strict completeness>0.5. Benchmark does not flag threshold exhaustion.",
+      "possible_impact": "Using the standalone default gives a different benchmark. A final k=19 result may still fail the target.",
+      "handling": "Plan benchmark 3..19; save every k/completeness and threshold_reached; if exhausted report and hold affected result rather than extend k or relax threshold.",
+      "status": "PLANNED_EXPLICIT_PROTOCOL"
+    },
+    {
+      "id": "C-008",
+      "stage": "Validation zero features and empty concepts",
+      "affected_jobs": [],
+      "affected_scope": "C preparation / future baseline; shared B boundary where noted",
+      "evidence": "benchmark_methods.py:334-403; concept_explainer.py:463-473; utils/utils_mcd.py:260-270",
+      "evidence_type": "CONFIRMED_SOURCE",
+      "finding": "Validation keeps zero features. ACE returns no concept for a zero vector; HU-MCD zero-score argmax selects first concept when the image has nonzero support. Entirely zero normalization batches divide by zero. MCD averages relevance on absent-concept empty masks.",
+      "possible_impact": "Cross-method row handling differs by design; nonfinite scores are a correctness gate, empty MCD means may only warn for skipped absent masks.",
+      "handling": "B/C must keep raw rows and method-specific assignment; record empty-mask warnings; pause only affected results if nonfinite values enter an actual trajectory.",
+      "status": "SHARED_B_C_PROTOCOL"
+    },
+    {
+      "id": "C-009",
+      "stage": "MCD full-rank complement and spatial maps",
+      "affected_jobs": [],
+      "affected_scope": "C preparation / future baseline; shared B boundary where noted",
+      "evidence": "utils/utils_mcd.py:basis_of_ortho_complement; run_mcd.py:prepare_imgs_for_mcd",
+      "evidence_type": "CONFIRMED_SOURCE_CONDITIONAL",
+      "finding": "Full-rank union returns an uninitialized 1xd complement; two asserted conditions are tuples and do not enforce the intended shape equality. Spatial mask indexing uses width/height inconsistently for rectangular maps.",
+      "possible_impact": "Potential decomposition failure at full rank; rectangular spatial mapping is unsafe. Current expected 7x7 maps do not trigger the rectangular case.",
+      "handling": "Check actual feature shape, finite basis, rank and reconstruction before evaluating; if triggered pause MCD and report rather than change basis rules.",
+      "status": "CONDITIONAL_CORRECTNESS_GATE"
+    },
+    {
+      "id": "C-010",
+      "stage": "Remote inventory and execution provenance",
+      "affected_jobs": [
+        "28214251"
+      ],
+      "affected_scope": "C readiness evidence from shared inventory; no baseline fit submitted by C",
+      "evidence": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/inventory.json; artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/launch_manifest.json; artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/sacct.psv; artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/collection.json; artifacts/bunya/workstreams-20260909/STATUS.json",
+      "evidence_type": "COLLECTED_SLURM_INVENTORY_AND_ACCOUNTING_WITH_BOUNDED_SCOPE",
+      "finding": "Inventory28214251 COMPLETED0:0 in49 elapsed seconds on CPU; worker PASS and collection COMPLETE with empty errors. No baseline_candidates at explicit known ROOT/data/cache/legacy paths. Field is omitted when none are found.",
+      "possible_impact": "No reusable baseline pool/cache established in this scope; pools elsewhere remain unsearched. Historical empty-queue statement is not a live scheduler claim.",
+      "handling": "Attached paths, byte counts and SHA256 for collected receipts. Inventory-pending state resolved; preserve explicit scope and seek an identified external pool or user-approved selection protocol before ACE.",
+      "status": "INVENTORY_RESOLVED_NO_CANDIDATES_IN_SCOPE",
+      "evidence_artifacts": [
+        {
+          "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/inventory.json",
+          "sha256": "59e03a84268c20e350ebb92c0fe37f3b28499d525132184df8ab4b1793bd7d25",
+          "bytes": 16948
+        },
+        {
+          "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/launch_manifest.json",
+          "sha256": "74a82947955d84c0b9cd5b72eacb0d37d791349d56db811f2b80bc45b333998b",
+          "bytes": 1447
+        },
+        {
+          "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/sacct.psv",
+          "sha256": "85ff15c3dc2cc6bdfa9ede0742a9f6ddc31a494ddf1ef4549d48012e9abb3222",
+          "bytes": 197
+        },
+        {
+          "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/collection.json",
+          "sha256": "de28226a0caa518cb7af91d42b80da9e1383f3bd1cdae5544077e7a964fc0180",
+          "bytes": 2173
+        },
+        {
+          "path": "artifacts/bunya/workstreams-20260909/STATUS.json",
+          "sha256": "b71c0cef3b7b5b1bf3c1e36fb131877aa92f7b584ccdae605f9c4c8dae310e67",
+          "bytes": 605
+        }
+      ]
+    },
+    {
+      "id": "C-011",
+      "stage": "Benchmark aggregation and endpoints",
+      "affected_jobs": [],
+      "affected_scope": "C preparation / future baseline; shared B boundary where noted",
+      "evidence": "benchmark_methods.py:iter_mask_imgs_ace,iter_mask_imgs_mcd,calc_avg_and_std,plot_results",
+      "evidence_type": "CONFIRMED_SOURCE",
+      "finding": "ACE checks terminal masks inside the segment loop; MCD/HU-MCD check after a concept. Complete endpoints can be omitted. Aggregation requires >75% of images at a step; plotting uses deleted-pixel x coordinates for both directions.",
+      "possible_impact": "Unequal trajectory support and truncated endpoints can mislead AUC/comparisons.",
+      "handling": "Preserve numerical rules, save every state/support/endpoint; clarify axis labels without changing data; no invented terminal states or interpolated primary AUC.",
+      "status": "SHARED_B_C_PROTOCOL"
+    }
+  ],
+  "local_checks": {
+    "source_comparison": "Eight inspected scientific files byte-identical to pinned upstream via git show; no network.",
+    "frozen_manifest_counts": [
+      400,
+      50
+    ],
+    "cav_stub_no_fitting": {
+      "runs": 20,
+      "first_run_negative_count": 50,
+      "runs_with_same_negative_id_set_as_first": 20,
+      "unique_negative_ids_across_runs": 50,
+      "method": "AST-extract actual train_cavs; replace classifier with identity recorder; synthetic2000 IDs, np.random.seed43; no estimator.fit."
+    },
+    "slic_synthetic": {
+      "skimage": "0.19.3",
+      "shape": [
+        32,
+        32,
+        3
+      ],
+      "seed": 43,
+      "min_label": 1,
+      "max_label": 16,
+      "largest_label_omitted": true,
+      "training_images_used": 0
+    }
+  },
+  "next_decisions": [
+    "Bounded inventory28214251 collected: no baseline candidates at checked paths; use attached evidence for deduplication. An existing pool elsewhere must be explicitly identified, or a new-pool proposal requires user judgment.",
+    "Choose ACE50 derivation and training-only TCAV-test policy; recommend frozen-prefix50 for discovery, do not materialize until authorized.",
+    "Resolve ACE code-reference versus separately corrected scientific protocol and random-pool population/control overlap policy.",
+    "Authorize specific staged ACE/MCD budgets only after input/protocol readiness; MCD has no dependency on ACE negative pool and A/B need not wait for C."
+  ],
+  "inventory_receipt_schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "title": "Baseline preparation parent inventory facts, schema_version1",
+    "type": "object",
+    "required": [
+      "schema_version",
+      "status",
+      "execution",
+      "scheduler_snapshot",
+      "scan",
+      "findings",
+      "warnings",
+      "errors",
+      "artifacts"
+    ],
+    "properties": {
+      "schema_version": {
+        "const": 1
+      },
+      "status": {
+        "enum": [
+          "COMPLETE",
+          "PARTIAL",
+          "FAILED"
+        ]
+      },
+      "execution": {
+        "type": "object",
+        "required": [
+          "slurm_job_id",
+          "node",
+          "started_at",
+          "finished_at",
+          "worker_code_commit",
+          "worker_sha256",
+          "config_sha256"
+        ],
+        "properties": {
+          "slurm_job_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "node": {
+            "type": "string",
+            "minLength": 1
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finished_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "worker_code_commit": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{40}$"
+          },
+          "worker_sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "config_sha256": {
+            "$ref": "#/$defs/sha256"
+          }
+        }
+      },
+      "scheduler_snapshot": {
+        "type": "object",
+        "required": [
+          "observed_at",
+          "accounting_window",
+          "user_or_account",
+          "queries",
+          "active_job_ids",
+          "baseline_job_ids",
+          "evaluation_job_ids",
+          "receipt"
+        ],
+        "properties": {
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "accounting_window": {
+            "type": "object",
+            "required": [
+              "start",
+              "end"
+            ],
+            "properties": {
+              "start": {
+                "type": "string"
+              },
+              "end": {
+                "type": "string"
+              }
+            }
+          },
+          "user_or_account": {
+            "type": "string"
+          },
+          "queries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active_job_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "baseline_job_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "evaluation_job_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "receipt": {
+            "$ref": "#/$defs/artifact"
+          }
+        }
+      },
+      "scan": {
+        "type": "object",
+        "required": [
+          "roots",
+          "patterns",
+          "recursive",
+          "follow_symlinks",
+          "scope_complete",
+          "excluded_paths",
+          "limits"
+        ],
+        "properties": {
+          "roots": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "pattern": "^/"
+            }
+          },
+          "patterns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "recursive": {
+            "type": "boolean"
+          },
+          "follow_symlinks": {
+            "type": "boolean"
+          },
+          "scope_complete": {
+            "type": "boolean"
+          },
+          "excluded_paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "limits": {
+            "type": "object",
+            "description": "Record depth, file-count, size and timeout limits; absent files outside scope cannot be called absent."
+          }
+        }
+      },
+      "findings": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/finding"
+        }
+      },
+      "warnings": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/issue"
+        }
+      },
+      "errors": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/issue"
+        }
+      },
+      "artifacts": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/artifact"
+        }
+      }
+    },
+    "$defs": {
+      "sha256": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "artifact": {
+        "type": "object",
+        "required": [
+          "path",
+          "sha256",
+          "bytes"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "$ref": "#/$defs/sha256"
+          },
+          "bytes": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "issue": {
+        "type": "object",
+        "required": [
+          "id",
+          "stage",
+          "path",
+          "message",
+          "impact",
+          "handling",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "stage": {
+            "type": "string"
+          },
+          "path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "impact": {
+            "type": "string"
+          },
+          "handling": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        }
+      },
+      "finding": {
+        "type": "object",
+        "required": [
+          "path",
+          "kind",
+          "exists",
+          "resolved_path",
+          "evidence_level",
+          "inventory_artifact",
+          "counts",
+          "identity",
+          "compatibility",
+          "issues"
+        ],
+        "properties": {
+          "path": {
+            "type": "string",
+            "pattern": "^/"
+          },
+          "resolved_path": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "enum": [
+              "random_pool",
+              "activation_cache",
+              "ssc_cache",
+              "baseline_result",
+              "manifest",
+              "other"
+            ]
+          },
+          "exists": {
+            "type": "boolean"
+          },
+          "evidence_level": {
+            "enum": [
+              "name_only",
+              "metadata_only",
+              "manifest_verified",
+              "content_verified"
+            ]
+          },
+          "inventory_artifact": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/artifact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "counts": {
+            "type": "object",
+            "required": [
+              "files",
+              "images",
+              "decoded_eligible_images",
+              "feature_rows",
+              "zero_feature_rows",
+              "duplicate_ids",
+              "duplicate_content",
+              "overlap_frozen_training",
+              "overlap_frozen_validation",
+              "labels_by_synset",
+              "splits"
+            ],
+            "properties": {
+              "files": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "images": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "decoded_eligible_images": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "feature_rows": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "zero_feature_rows": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "duplicate_ids": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "duplicate_content": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "overlap_frozen_training": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "overlap_frozen_validation": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "minimum": 0
+              },
+              "labels_by_synset": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "splits": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            }
+          },
+          "identity": {
+            "type": "object",
+            "required": [
+              "producer_job_id",
+              "producer_commit",
+              "input_manifest_sha256",
+              "ordered_row_mapping_sha256",
+              "checkpoint_sha256",
+              "layer",
+              "preprocessing",
+              "precision",
+              "batch_size",
+              "clustering",
+              "array_shapes_and_dtypes"
+            ],
+            "properties": {
+              "producer_job_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "producer_commit": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "input_manifest_sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ordered_row_mapping_sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "checkpoint_sha256": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "layer": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "preprocessing": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "precision": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "batch_size": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "clustering": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "array_shapes_and_dtypes": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            }
+          },
+          "compatibility": {
+            "type": "object",
+            "required": [
+              "status",
+              "intended_stage",
+              "reasons",
+              "user_policy_required"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "UNKNOWN",
+                  "CANDIDATE",
+                  "VERIFIED",
+                  "INCOMPATIBLE"
+                ]
+              },
+              "intended_stage": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "reasons": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "user_policy_required": {
+                "type": "boolean"
+              }
+            }
+          },
+          "issues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/issue"
+            }
+          }
+        }
+      }
+    }
+  },
+  "inventory_receipt_rules": [
+    "All remote enumeration, decoding, hashing and array processing happen within the recorded Slurm job. Scheduler read-only queries may be run by the parent using its authenticated SSH master.",
+    "A bounded initial name/metadata scan may leave counts and identity fields null. Null means not checked, never zero. Do not trigger costly extraction solely to populate this schema.",
+    "Name-only candidates are not validated caches or selected pools; actual pool selection still requires user policy judgment.",
+    "A COMPLETE scan means complete within declared scope, not all Bunya storage. Empty findings outside an incomplete/limited scope cannot prove absence.",
+    "For pool manifests, rows must contain source_id, synset, split, source/input paths, SHA256, mode/format outcome and role/selection order if known. Include frozen input overlap checks by original identity and content.",
+    "For caches, record method-specific row mapping, zero filtering, shapes/dtypes, weight/preprocessing/precision and SSC q/normalization. Unknown producer identity requires UNKNOWN/CANDIDATE, not VERIFIED.",
+    "Do not deserialize untrusted pickle merely to inventory a path; headers/manifests can be inspected safely and missing identity reported.",
+    "Archive scheduler and inventory receipts locally with hashes; link all warnings/errors to the unified anomaly registry. User-provided scheduler facts remain attributed until raw receipts are attached."
+  ],
+  "coordination_handoff": {
+    "parent_infrastructure_commit": "94369b79a78ca534433da622268c3a9afea9d293",
+    "commit_evidence": "Local HEAD read at handoff",
+    "deployment_job_id": "28214175",
+    "deployment_evidence": "Coordinator reports deployed via Slurm; C did not query remote",
+    "A_input_audit": "Completed as part of shared inventory28214251; results in collected inventory; A input decisions remain owned by parent.",
+    "wait_for_inventory_before_delivering_preparation": false,
+    "baseline_execution_commit": null,
+    "owned_files": [
+      "docs/BASELINE_PREPARATION.md",
+      "hpc/configs/golden_retriever_baselines.plan.json"
+    ],
+    "validation": "JSON parsed; all eight source hashes unchanged; scientific choices unset and authorization false; JSON Schema meta-validator unavailable locally",
+    "inventory_job_id": "28214251",
+    "inventory_collection": {
+      "path": "artifacts/bunya/workstreams-20260909/collected/28214251/20260909T050428.482463Z/collection.json",
+      "sha256": "de28226a0caa518cb7af91d42b80da9e1383f3bd1cdae5544077e7a964fc0180",
+      "bytes": 2173
+    }
+  }
+}

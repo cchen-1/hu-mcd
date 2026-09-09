@@ -14,7 +14,7 @@ import warnings
 
 from utils.run_tracking import atomic_json, sha256, utc_now
 
-MODES={'inventory':'hpc.workstream_inventory','publish':'hpc.multiclass_inputs','evaluate':'hpc.evaluate_reference','baseline-readiness':'hpc.baseline_readiness'}
+MODES={'inventory':'hpc.workstream_inventory','publish':'hpc.multiclass_inputs','evaluate':'hpc.evaluate_reference'}
 
 
 def event(output, stage, kind, evidence, impact, handling, status='OPEN', severity='warning'):
@@ -94,12 +94,22 @@ def main():
         record['stage']=plan['mode'];atomic_json(output/'launch_manifest.json',record)
         if plan['mode']=='discover':
             record['reused_checks']=verify_discovery_reuse(config,release);atomic_json(output/'launch_manifest.json',record)
-            proc=subprocess.run([sys.executable,str(release/'run_smoke.py'),'--config',str(output/'actual_config.json'),'--run-id',job],cwd=release)
-            if proc.returncode:raise RuntimeError('Discovery process failed: '+str(proc.returncode))
+            launchdir=Path(plan['runtime_root'])/'launches'/job;launchdir.mkdir(exist_ok=False)
+            public_launch={'schema_version':1,'job_id':job,'run_id':job,'slurm_job_id':job,'actual_commit':actual,'mode':'reference','host':socket.gethostname(),'status':'RUNNING','plan':plan}
+            atomic_json(launchdir/'launch_manifest.json',public_launch)
+            # Stream and preserve every child warning/diagnostic; do not allocate a second GPU.
+            with (output/'discovery-process.log').open('w') as childlog:
+                proc=subprocess.Popen([sys.executable,str(release/'run_smoke.py'),'--config',str(output/'actual_config.json'),'--run-id',job],cwd=release,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+                for line in proc.stdout:
+                    print(line,end='',flush=True);childlog.write(line);childlog.flush()
+                    if 'warning' in line.lower():event(output,'discover','child_warning',line.rstrip(),'UNASSESSED','Preserved with complete child log; inspect in context')
+                code=proc.wait()
+            public_launch['status']='EXECUTION_COMPLETED' if code==0 else 'FAILED'
+            atomic_json(launchdir/'launch_manifest.json',public_launch)
+            if code:raise RuntimeError('Discovery process failed: '+str(code))
             result=json.loads((Path(plan['runtime_root'])/'outputs/runs'/job/'summary.json').read_text())
             record['discovery_output']=str(Path(plan['runtime_root'])/'outputs/runs'/job)
             # Class-format compatible launch record for the established reference collector.
-            launchdir=Path(plan['runtime_root'])/'launches'/job;launchdir.mkdir(exist_ok=False)
             atomic_json(launchdir/'launch_manifest.json',{'schema_version':1,'job_id':job,'run_id':job,'slurm_job_id':job,'actual_commit':actual,'mode':'reference','host':socket.gethostname(),'status':'EXECUTION_COMPLETED','plan':plan})
         else:
             module=importlib.import_module(MODES[plan['mode']]);function=module.publish if plan['mode']=='publish' else module.run
