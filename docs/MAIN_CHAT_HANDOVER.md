@@ -1,3 +1,5 @@
+> **Current handover — 2026-09-09:** Read [WORKSTREAM_REPORT.zh-en.md](WORKSTREAM_REPORT.zh-en.md) and the local `artifacts/bunya/workstreams-20260909/STATUS.json` before acting. Nine A discoveries were submitted exactly once; B28214892 completed and passed independent acceptance; C preparation is complete with no fit submitted. Execution releases982045f/f73216b are immutable. Do not treat the historical not-yet-deployed status below as current, or duplicate these jobs. See [ANOMALIES.jsonl](ANOMALIES.jsonl) for all recorded exceptions and dispositions.
+
 # Main-chat handover — 2026-09-08
 
 ## 本次范围与交付状态
