@@ -61,6 +61,23 @@ def write_json(path: Path, data) -> None:
     tmp.replace(path)
 
 
+def random_code_identity(source):
+    """Use actual immutable evaluation code; old run manifests omit masking files.
+
+    The shared Slurm worker verifies installed timm masking files against this
+    release. Ten-class source audits separately bind them to the discovery code.
+    """
+    repo = Path(__file__).resolve().parents[1]
+    result = dict(source['manifest']['source_sha256'])
+    for relative in ('input_masking/resnet.py', 'input_masking/sal_layers.py'):
+        actual = sha256(repo / relative)
+        audited = source['audit'].get('core_sha256', {}).get(relative)
+        if source['audit_schema'] == 'ten-class-visual-v1' and audited != actual:
+            raise ValueError('Audited input-mask code differs from evaluation release')
+        result[relative] = actual
+    return result
+
+
 def random_signature(config, model_default_cfg, rows, source_sha256):
     """Identity required for reusing both original Random trajectories; no paths-as-identity."""
     identity = dict(schema='humcd-random-v1',
@@ -444,7 +461,7 @@ def run(config: dict, output: Path) -> dict:
                 partial_prediction_format='*_partial_logits.f32: native float32 [states,1000], corresponding *_partial_batches.jsonl',
                 state_mask_format='NPZ shape=[states,height,width], bits=packbits C-order, bitorder=big'))
             write_json(output / 'random_signature.json', random_signature(
-                config, model_cfg, rows, source['manifest']['source_sha256']))
+                config, model_cfg, rows, random_code_identity(source)))
             curves = {}
             for setting in ('humcd', 'rdm'):
                 for mode in ('sdc', 'ssc'):

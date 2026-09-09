@@ -13,7 +13,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from hpc.evaluate_reference import (CachedScores, audited_cache, checked_file,
     predict_stream, save_masks, sha256, under, upstream_scores, validate_alignment,
-    verify_sources, random_signature, SOURCE_FILES, SOURCE_JOB, SOURCE_COMMIT)
+    verify_sources, random_signature, random_code_identity, SOURCE_FILES, SOURCE_JOB, SOURCE_COMMIT)
 
 
 class CacheIdentityTests(unittest.TestCase):
@@ -104,6 +104,25 @@ class CacheIdentityTests(unittest.TestCase):
             config['source_files_sha256']['run_manifest.json'] = sha256(root/'run_manifest.json')
             with self.assertRaisesRegex(ValueError, 'identity/status'):
                 verify_sources(config)
+
+    def test_real_multiclass_manifests_missing_masking_hashes(self):
+        base=Path(__file__).resolve().parents[2]/'artifacts/bunya/ten-class-review/evidence'
+        if not base.exists():self.skipTest('Private audit fixtures absent')
+        for job in ('28214893','28214894','28214896','28214897','28214983','28214984','28215019','28215020','28215042'):
+            folder=base/job
+            manifest=json.loads((folder/'run/run_manifest.json').read_text())
+            audit=json.loads((folder/'audit.json').read_text())
+            self.assertNotIn('input_masking/resnet.py',manifest['source_sha256'])
+            source=dict(manifest=manifest,audit=audit,audit_schema='ten-class-visual-v1')
+            cfg=json.loads((folder/'run/resolved_config.json').read_text())
+            cfg['random_seeds']={'sdc':43,'ssc':43}
+            rows=json.loads((folder/'inputs/dataset_manifest.json').read_text())['validation']
+            model_cfg=json.loads((folder/'run/scientific/discovery.json').read_text())['model_default_cfg']
+            sig=random_signature(cfg,model_cfg,rows,random_code_identity(source))
+            self.assertEqual(len(sig['sha256']),64)
+            audit['core_sha256']['input_masking/resnet.py']='0'*64
+            with self.assertRaisesRegex(ValueError,'input-mask code'):
+                random_code_identity(source)
 
     def test_random_reuse_requires_complete_input_and_protocol_identity(self):
         cfg=dict(resnet_checkpoint_sha256='a'*64,model_name='resnet50',max_shortest_side=300,
