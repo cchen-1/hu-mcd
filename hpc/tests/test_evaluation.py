@@ -13,7 +13,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from hpc.evaluate_reference import (CachedScores, audited_cache, checked_file,
     predict_stream, save_masks, sha256, under, upstream_scores, validate_alignment,
-    verify_sources, SOURCE_FILES, SOURCE_JOB, SOURCE_COMMIT)
+    verify_sources, random_signature, SOURCE_FILES, SOURCE_JOB, SOURCE_COMMIT)
 
 
 class CacheIdentityTests(unittest.TestCase):
@@ -73,11 +73,52 @@ class CacheIdentityTests(unittest.TestCase):
                 source_files_sha256={k:sha256(root/k) for k in SOURCE_FILES},
                 random_seeds={'sdc':43,'ssc':43})
             verify_sources(config)
+            # Same verification path supports a separately pinned non-Golden discovery.
+            new_job, new_commit = '28214983', 'f'*40
+            for item in (summary, manifest):
+                item.update(run_id=new_job, git_commit=new_commit)
+            dataset['class_name']=resolved['class_name']=config['class_name']='airliner'
+            (root/'dataset.json').write_text(json.dumps(dataset))
+            resolved['dataset_manifest_sha256']=config['dataset_manifest_sha256']=sha256(root/'dataset.json')
+            (root/'resolved_config.json').write_text(json.dumps(resolved))
+            for item,name in [(summary,'summary.json'),(manifest,'run_manifest.json')]:
+                item['resolved_config_sha256']=sha256(root/'resolved_config.json')
+                (root/name).write_text(json.dumps(item))
+            audit=dict(status='PASS',source_job=new_job,expected_commit=new_commit,code_commit=new_commit,
+                class_name='airliner',config_sha256=sha256(root/'resolved_config.json'),
+                dataset_sha256=sha256(root/'dataset.json'),source_cache=str(root),cache_inventory=[],
+                model_identity={'resnet_sha256':resolved['resnet_checkpoint_sha256'],'precision':precision},
+                splits={k:dict(images=n,masks_features_mapping='PASS',saved_reconstruction_checks={'status':'PASS'})
+                        for k,n in [('training',400),('validation',50)]})
+            (root/'audit.json').write_text(json.dumps(audit))
+            config.update(source_job=new_job,source_commit=new_commit,source_audit_schema='ten-class-visual-v1',
+                          source_audit_sha256=sha256(root/'audit.json'),
+                          source_files_sha256={k:sha256(root/k) for k in SOURCE_FILES})
+            self.assertEqual(verify_sources(config)['source_job'],new_job)
+            config['class_name']='golden_retriever'
+            with self.assertRaisesRegex(ValueError,'audit identity'):
+                verify_sources(config)
+            config['class_name']='airliner'
             manifest['run_id'] = 'other-run'
             (root/'run_manifest.json').write_text(json.dumps(manifest))
             config['source_files_sha256']['run_manifest.json'] = sha256(root/'run_manifest.json')
             with self.assertRaisesRegex(ValueError, 'identity/status'):
                 verify_sources(config)
+
+    def test_random_reuse_requires_complete_input_and_protocol_identity(self):
+        cfg=dict(resnet_checkpoint_sha256='a'*64,model_name='resnet50',max_shortest_side=300,
+                 precision={'cudnn_allow_tf32':True},batch_size=8,random_seeds={'sdc':43,'ssc':43})
+        rows=[dict(source='/remote/image.JPEG',input_sha256='b'*64)]
+        code={k:'c'*64 for k in ('benchmark_methods.py','classes.py','utils/utils_general.py',
+                                 'input_masking/resnet.py','input_masking/sal_layers.py')}
+        original=random_signature(cfg,{'crop_pct':.95},rows,code)
+        moved=[dict(source='/other/image.JPEG',input_sha256='b'*64)]
+        self.assertEqual(original,random_signature(cfg,{'crop_pct':.95},moved,code))
+        for changed in (dict(cfg,batch_size=64),dict(cfg,max_shortest_side=224),
+                        dict(cfg,random_seeds={'sdc':42,'ssc':43}),dict(cfg,resnet_checkpoint_sha256='d'*64)):
+            self.assertNotEqual(original,random_signature(changed,{'crop_pct':.95},rows,code))
+        self.assertNotEqual(original,random_signature(cfg,{'crop_pct':.95},
+                            [dict(source='/remote/another.JPEG',input_sha256='e'*64)],code))
 
     def test_mask_and_feature_order_including_zero_rows(self):
         raw = np.array([[1., 2.], [0., 0.], [3., 4.]])

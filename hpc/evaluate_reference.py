@@ -61,7 +61,27 @@ def write_json(path: Path, data) -> None:
     tmp.replace(path)
 
 
+def random_signature(config, model_default_cfg, rows, source_sha256):
+    """Identity required for reusing both original Random trajectories; no paths-as-identity."""
+    identity = dict(schema='humcd-random-v1',
+        inputs=[dict(source_id=Path(r['source']).name, sha256=r['input_sha256']) for r in rows],
+        classifier_sha256=config['resnet_checkpoint_sha256'],
+        model_name=config['model_name'], model_default_cfg=model_default_cfg,
+        max_shortest_side=config['max_shortest_side'], precision=config['precision'],
+        prediction=dict(batch_size=config['batch_size'], grouping='global image then state; final remainder',
+                        cropping_mode=0, use_masks=True, masking_mode=1, erosion_threshold=1.0),
+        perturbation=dict(grid_size=[10,10], cell_rule='floor division; uncovered borders preserved',
+                          directions=['sdc','ssc'], seeds=config['random_seeds'],
+                          python_random_version=random.Random.VERSION),
+        implementation={k:source_sha256[k] for k in ('benchmark_methods.py', 'classes.py',
+             'utils/utils_general.py', 'input_masking/resnet.py', 'input_masking/sal_layers.py')})
+    encoded=json.dumps(identity,sort_keys=True,separators=(',',':'),allow_nan=False).encode()
+    return dict(sha256=hashlib.sha256(encoded).hexdigest(), identity=identity)
+
+
 def verify_sources(config: dict) -> dict:
+    source_job = str(config.get('source_job', SOURCE_JOB))
+    source_commit = config.get('source_commit', SOURCE_COMMIT)
     root = Path(config['source_run_dir'])
     hashes = config['source_files_sha256']
     if set(SOURCE_FILES) - hashes.keys():
@@ -72,13 +92,35 @@ def verify_sources(config: dict) -> dict:
     summary, manifest, resolved = map(read, SOURCE_FILES[:3])
     audit = json.loads(checked_file(Path(config['source_audit_path']),
                                    config['source_audit_sha256']).read_text())
-    if (audit['status'] != 'PASS' or str(audit['source_job']) != SOURCE_JOB
-            or str(audit['audit_job']) != '28211056'):
-        raise ValueError('Source cache audit is not the approved completed audit')
-    if (summary['status'] != 'PASS' or str(summary['run_id']) != SOURCE_JOB
-            or str(manifest['run_id']) != SOURCE_JOB
-            or manifest['git_commit'] != SOURCE_COMMIT
-            or summary['git_commit'] != SOURCE_COMMIT or manifest['git_dirty']):
+    if audit['status'] != 'PASS' or str(audit['source_job']) != source_job:
+        raise ValueError('Source cache audit identity/status mismatch')
+    schema = config.get('source_audit_schema', 'golden-completed-run-v1')
+    if schema == 'golden-completed-run-v1':
+        if source_job != SOURCE_JOB or str(audit['audit_job']) != '28211056':
+            raise ValueError('Legacy audit is only valid for the original Golden run')
+    elif schema == 'ten-class-visual-v1':
+        expected = dict(expected_commit=source_commit, code_commit=source_commit,
+                        class_name=config['class_name'],
+                        config_sha256=hashes['resolved_config.json'],
+                        dataset_sha256=config['dataset_manifest_sha256'],
+                        source_cache=config['source_cache_dir'])
+        if any(audit.get(k) != v for k, v in expected.items()):
+            raise ValueError('Ten-class source audit identity mismatch')
+        model = audit['model_identity']
+        if (model['resnet_sha256'] != config['resnet_checkpoint_sha256']
+                or model['precision'] != config['precision']):
+            raise ValueError('Audited model identity mismatch')
+        for split, n in [('training', 400), ('validation', 50)]:
+            record = audit['splits'][split]
+            if (record['images'] != n or record['masks_features_mapping'] != 'PASS'
+                    or record['saved_reconstruction_checks']['status'] != 'PASS'):
+                raise ValueError('Source split has not passed mapping/reconstruction acceptance')
+    else:
+        raise ValueError(f'Unknown source audit schema: {schema}')
+    if (summary['status'] != 'PASS' or str(summary['run_id']) != source_job
+            or str(manifest['run_id']) != source_job
+            or manifest['git_commit'] != source_commit
+            or summary['git_commit'] != source_commit or manifest['git_dirty']):
         raise ValueError('Source discovery identity/status mismatch')
     for record in (summary, manifest):
         if record['resolved_config_sha256'] != hashes['resolved_config.json']:
@@ -100,7 +142,8 @@ def verify_sources(config: dict) -> dict:
     dataset = json.loads(checked_file(Path(config['dataset_manifest']),
                                      config['dataset_manifest_sha256']).read_text())
     if (len(dataset['training']) != 400 or len(dataset['validation']) != 50
-            or dataset['class_name'] != resolved['class_name']):
+            or dataset['class_name'] != resolved['class_name']
+            or config['class_name'] != resolved['class_name']):
         raise ValueError('Dataset manifest class/count mismatch')
     for split in ('training', 'validation'):
         if [r['input_sha256'] for r in dataset[split]] != [
@@ -109,12 +152,13 @@ def verify_sources(config: dict) -> dict:
     checked_file(Path(config['resnet_checkpoint']), config['resnet_checkpoint_sha256'])
     inventory = {}
     for item in audit['cache_inventory']:
-        relative = item['relative_path']
+        relative = item['path'] if schema == 'ten-class-visual-v1' else item['relative_path']
         if relative in inventory:
             raise ValueError(f'Duplicate cache identity: {relative}')
         under(Path(config['source_cache_dir']), relative)
         inventory[relative] = item
-    return dict(summary=summary, manifest=manifest, resolved=resolved,
+    return dict(source_job=source_job, source_commit=source_commit, audit_schema=schema,
+                summary=summary, manifest=manifest, resolved=resolved,
                 audit=audit, dataset=dataset, inventory=inventory,
                 discovery=read('scientific/discovery.json'))
 
@@ -336,7 +380,13 @@ def run(config: dict, output: Path) -> dict:
             images, masks, counts = [], [], []
             for index, (row, audit_row) in enumerate(zip(rows, audit_rows)):
                 filename = row['input_path']
-                if audit_row['image_index'] != index or audit_row['actual_input'] != filename:
+                if source['audit_schema'] == 'ten-class-visual-v1':
+                    same_input = (audit_row['input_name'] == Path(filename).name
+                                  and audit_row['actual_sha256'] == row['input_sha256']
+                                  and audit_row['source_id'] == Path(row['source']).name)
+                else:
+                    same_input = audit_row['actual_input'] == filename
+                if audit_row['image_index'] != index or not same_input:
                     raise ValueError('Audit/manifest image order mismatch')
                 checked_file(Path(filename), row['input_sha256'])
                 image = classes.ImageClass(filename, explainer.max_shortest_side)
@@ -349,14 +399,16 @@ def run(config: dict, output: Path) -> dict:
                 masks.append(image_masks)
                 counts.append(len(image_masks))
                 images.append(image)
-            if len(images) != 50 or features.shape != (569, 2048):
-                raise ValueError('Expected exactly 50 images and 569 raw validation features')
+            if len(images) != len(rows) or features.shape != (sum(counts), fc_weight.shape[1]):
+                raise ValueError('Audited image/raw feature counts or feature width mismatch')
             with np.load(root / 'scientific/validation.npz', allow_pickle=False) as retained:
                 keep = validate_alignment(features, raw_logits, counts, retained,
                     json.loads((root / 'scientific/validation_segments.json').read_text()),
                     masks, [row['input_path'] for row in rows])
-            if int((~keep).sum()) != 35:
-                raise ValueError('Expected original 35 zero-feature validation segments')
+            expected_zero = (sum(r['zero_features'] for r in audit_rows)
+                             if source['audit_schema'] == 'ten-class-visual-v1' else 35)
+            if int((~keep).sum()) != expected_zero:
+                raise ValueError('Zero-feature count differs from pinned source audit')
             offset = 0
             for image, image_masks in zip(images, masks):
                 for mask in image_masks:
@@ -382,7 +434,8 @@ def run(config: dict, output: Path) -> dict:
             for i, image_masks in enumerate(masks):
                 save_masks(data / f'source_masks_{i:03d}.npz', image_masks)
             write_json(output / 'evaluation_sources.json', dict(
-                source_job=SOURCE_JOB, source_commit=SOURCE_COMMIT,
+                source_job=source['source_job'], source_commit=source['source_commit'],
+                class_name=explainer.target_class,
                 source_files_sha256=config['source_files_sha256'],
                 source_audit_sha256=config['source_audit_sha256'],
                 inputs=rows, mask_counts=counts, target_index=target, precision=runtime_precision(torch),
@@ -390,6 +443,8 @@ def run(config: dict, output: Path) -> dict:
                 grouping='Per setting/mode: image order, then state order, global batches of 8; final remainder only',
                 partial_prediction_format='*_partial_logits.f32: native float32 [states,1000], corresponding *_partial_batches.jsonl',
                 state_mask_format='NPZ shape=[states,height,width], bits=packbits C-order, bitorder=big'))
+            write_json(output / 'random_signature.json', random_signature(
+                config, model_cfg, rows, source['manifest']['source_sha256']))
             curves = {}
             for setting in ('humcd', 'rdm'):
                 for mode in ('sdc', 'ssc'):
@@ -452,7 +507,7 @@ def run(config: dict, output: Path) -> dict:
                     pixel_avg, pixel_std = benchmark.calc_avg_and_std(fractions, 50)
                     contributors = [sum(c > step for c in state_counts) for step in range(max(state_counts))]
                     included = [i for i, n in enumerate(contributors) if n > 0.75 * 50]
-                    curves[prefix] = dict(setting=setting, mode=mode, metric_scope='single_class_golden_retriever',
+                    curves[prefix] = dict(setting=setting, mode=mode, metric_scope='single_class', class_name=explainer.target_class, target_index=target,
                         step_indices=included, contributors=[contributors[i] for i in included],
                         all_step_contributors=contributors, accuracy_mean=avg.tolist(), accuracy_std=std.tolist(),
                         visible_pixel_percent_mean=pixel_avg.tolist(), visible_pixel_percent_std=pixel_std.tolist(),
@@ -484,7 +539,7 @@ def run(config: dict, output: Path) -> dict:
                     ax.plot(curve['upstream_plot_x_deleted_fraction'], curve['accuracy_mean'],
                             marker='.', label='HU-MCD' if setting == 'humcd' else 'Random (seed 43)')
                 ax.set(xlabel='Deleted pixel fraction (upstream x coordinate)', ylabel='Top-1 accuracy',
-                       title=f'Golden Retriever only: C-{ "Deletion" if mode == "sdc" else "Insertion"}')
+                       title=f'{explainer.target_class.replace("_", " ")}: C-{ "Deletion" if mode == "sdc" else "Insertion"}')
                 if mode == 'ssc':
                     ax.invert_xaxis()
                 ax.legend()
@@ -492,8 +547,9 @@ def run(config: dict, output: Path) -> dict:
                 fig.tight_layout()
                 fig.savefig(data / f'{mode}.png', dpi=160)
                 plt.close(fig)
-            summary = dict(status='PASS', metric_scope='single_class_golden_retriever_not_ten_class_reproduction',
-                source_job=SOURCE_JOB, validation_images=50, raw_segments=569, zero_segments=35,
+            summary = dict(status='PASS', metric_scope='single_class', class_name=explainer.target_class, target_index=target,
+                source_job=source['source_job'], source_commit=source['source_commit'],
+                validation_images=len(rows), raw_segments=len(features), zero_segments=int((~keep).sum()),
                 concepts=len(bases), curves=curves, elapsed_seconds=time.monotonic()-start,
                 anomaly_count=len(anomalies), precision=runtime_precision(torch), batch_size=8,
                 gpu_name=torch.cuda.get_device_name() if config['device'].startswith('cuda') else None,
