@@ -15,7 +15,8 @@ import warnings
 from utils.run_tracking import atomic_json, sha256, utc_now
 
 MODES={'inventory':'hpc.workstream_inventory','publish':'hpc.multiclass_inputs','evaluate':'hpc.evaluate_reference',
-       'mcd-features':'hpc.mcd_reference','mcd-fit':'hpc.mcd_reference','mcd-evaluate':'hpc.mcd_reference'}
+       'mcd-features':'hpc.mcd_reference','mcd-fit':'hpc.mcd_reference','mcd-evaluate':'hpc.mcd_reference',
+       'ace-inputs':'hpc.ace_inputs'}
 
 
 def event(output, stage, kind, evidence, impact, handling, status='OPEN', severity='warning'):
