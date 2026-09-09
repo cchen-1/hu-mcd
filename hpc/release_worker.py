@@ -202,8 +202,14 @@ def main():
             if config["torch_num_threads"] != int(os.environ["SLURM_CPUS_PER_TASK"]):
                 raise ValueError("Config threads differ from allocation")
             if plan["mode"] == "reference":
-                record["successful_probe_job_id"] = verify_probe(plan, config)
-                record["successful_probe_launch_sha256"] = sha256(plan["probe_launch"])
+                if plan.get('prerequisite_report'):
+                    sys.path.insert(0, str(release))
+                    from hpc.prerequisites import verify_completed
+                    record['prerequisite_verification'] = verify_completed(
+                        plan['prerequisite_report'], plan['prerequisite_report_sha256'], release, config)
+                else:
+                    record["successful_probe_job_id"] = verify_probe(plan, config)
+                    record["successful_probe_launch_sha256"] = sha256(plan["probe_launch"])
             record["inputs_verified"] = verify_inputs(config)
             checkpoint = Path(config["segmentation"]["checkpoint"])
             if not checkpoint.is_file():

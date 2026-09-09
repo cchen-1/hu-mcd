@@ -1,0 +1,27 @@
+{
+  "original_probe": {
+    "path": "/scratch/user/uqcche38/hu-mcd/launches/28204575/launch_manifest.json",
+    "sha256": "51753e52dae9db8872c174eb125022f8d002c51f6fcf2bf6d34fb61c09f5b6f6"
+  },
+  "diagnosis": {
+    "path": "/scratch/user/uqcche38/hu-mcd/launches/28206208/probe-failure-diagnosis/diagnosis.json",
+    "sha256": "e7e44f3b407963c24413e030b9bece6d6a981e9c5222269f49b6a476faecf849"
+  },
+  "core_sha256": {
+    "classes.py": "74e080e1626918e545db3c629e5fcaadf466a22db4ae1865818958e66081a99f",
+    "concept_explainer.py": "d18b2ffcae728fe2d80fa3fbfbd61836a78786b3f2e2bf43cb10f9b197737a2c",
+    "input_masking/resnet.py": "97c345980bec326fe2b149c6d89635e7074dffa5674a7085dd99c9d7526ca6ca",
+    "input_masking/sal_layers.py": "ef33b64f680f8659b60c52694ea91d35498491c697f6418e92e2d0f3ec75e54d",
+    "utils/utils_general.py": "c4852b90006877eda342c3f03741e3b504e6357985c9800374e1a2749942c955",
+    "utils/utils_mcd.py": "f5aa7056c25c3b716cb3be7c7d32714daba76f7933493d9f5504a1839fb6f394"
+  },
+  "numerics_sha256": "0e5047f8290c724308572c5f31e30dd0f0cfffb9db3cdff8d8dcb15dcf921cdf",
+  "features": {
+    "path": "/scratch/user/uqcche38/hu-mcd/launches/28204575/probe/activations/reference_probe_resnet50_global_pool_sam_org_scale_masked_conv_leakage_erosion_0.25_5d6b64192ebc92ef1a5e0d56eef617c079d1f0b1598bb0183fbca1d2c47eccf0_acts.npy",
+    "sha256": "8935db486ce7cbb70881cc46f1b42e1727f5d345b387923214c431f2eba74e53"
+  },
+  "logits": {
+    "path": "/scratch/user/uqcche38/hu-mcd/launches/28204575/probe/activations/reference_probe_resnet50_global_pool_sam_org_scale_masked_conv_leakage_erosion_0.25_5d6b64192ebc92ef1a5e0d56eef617c079d1f0b1598bb0183fbca1d2c47eccf0_logits.npy",
+    "sha256": "d6022c8cbed2df87addcbcd3d83d1ee8fccc630167f9ce52fb90e9c6dd274ad8"
+  }
+}

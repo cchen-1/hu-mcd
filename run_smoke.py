@@ -243,6 +243,18 @@ def run(config_path: Path, config: dict, tracker: RunTracker) -> None:
         gpu_device_name = properties.name
         gpu_total_memory_mib = properties.total_memory / 1024**2
 
+    precision = {
+        'cudnn_allow_tf32': torch.backends.cudnn.allow_tf32,
+        'matmul_allow_tf32': torch.backends.cuda.matmul.allow_tf32,
+        'cudnn_benchmark': torch.backends.cudnn.benchmark,
+        'cudnn_deterministic': torch.backends.cudnn.deterministic,
+        'deterministic_algorithms': torch.are_deterministic_algorithms_enabled(),
+        'float32_matmul_precision': torch.get_float32_matmul_precision(),
+    }
+    tracker.record_precision(precision)
+    if config.get('precision') is not None and precision != config['precision']:
+        raise ValueError('Runtime precision differs from the fixed reference configuration')
+
     source_dir = Path(config["source_dir"]).expanduser().resolve()
     output_dir = Path(config["output_dir"]).expanduser().resolve()
     cache_root = Path(config["cache_root"]).expanduser().resolve()

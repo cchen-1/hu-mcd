@@ -7,7 +7,43 @@ import sys
 import time
 
 
+def check_mask_boundary(model, batch, output):
+    import numpy as np
+    import torch
+    with torch.no_grad():
+        masked = model(batch)
+        ordinary = model(batch[0])  # identical batch shape on both paths
+    left = masked[:1].cpu().numpy()
+    right = ordinary[:1].cpu().numpy()
+    np.savez_compressed(Path(output)/'mask_boundary.npz', masked=left, ordinary=right)
+    finite = bool(torch.isfinite(masked).all() and torch.isfinite(ordinary).all())
+    report = {'batch_size': len(batch[0]), 'finite': finite,
+              'max_abs_error': float(np.max(np.abs(left-right))), 'rtol': 1e-4, 'atol': 1e-4}
+    (Path(output)/'mask_boundary.json').write_text(json.dumps(report, indent=2)+'\n')
+    if not finite:
+        raise ValueError('Non-finite all-one/zero mask boundary output')
+    np.testing.assert_allclose(left, right, rtol=1e-4, atol=1e-4)
+    return report
+
+
 def run(config, release, output, check_numerics):
+    report = {'status': 'RUNNING', 'last_completed_stage': None}
+    def checkpoint(stage, **values):
+        report.update(last_completed_stage=stage, **values)
+        target = Path(output)/'probe_report.json'
+        temp = target.with_suffix('.tmp')
+        temp.write_text(json.dumps(report, indent=2)+'\n')
+        temp.replace(target)
+    try:
+        checkpoint('started')
+        result = _run(config, release, output, check_numerics, checkpoint)
+        return result
+    except BaseException as exc:
+        checkpoint(report['last_completed_stage'], status='FAILED', error=f'{type(exc).__name__}: {exc}')
+        raise
+
+
+def _run(config, release, output, check_numerics, checkpoint):
     sys.path.insert(0,str(release))
     import copy
     import random
@@ -40,6 +76,7 @@ def run(config, release, output, check_numerics):
         image.load_segments(cache_dir=str(Path(output)/'segments'),sam_model=sam)
         torch.cuda.synchronize()
         segmentation.append({'input':image.filename,'seconds':time.perf_counter()-t,'segments':len(image.segments)})
+        checkpoint('segmentation', segmentation=segmentation, sam_load_seconds=sam_load, peak_gpu_allocated_mib=torch.cuda.max_memory_allocated()/1024**2)
     del sam
     import gc
     gc.collect();torch.cuda.empty_cache()
@@ -53,17 +90,15 @@ def run(config, release, output, check_numerics):
     acts=np.stack([s.model_act for s in segs]);logits=np.stack([s.model_pred for s in segs])
     weights=explainer.model.fc.weight.detach().cpu().numpy();bias=explainer.model.fc.bias.detach().cpu().numpy()
     fc,_=check_numerics(acts,logits,weights,bias,None)
+    checkpoint('feature_fc_check', all_classes_fc=fc, activation_seconds=activation_seconds)
     # End-to-end all-one masking must agree with the corresponding unmasked tensor.
     artificial=copy.copy(images[0])
     artificial.segments=[classes.SegmentClass(np.ones(artificial.img_numpy.shape[:2],dtype=np.float32),artificial),
                          classes.SegmentClass(np.zeros(artificial.img_numpy.shape[:2],dtype=np.float32),artificial)]
     ds=classes.ConceptDatasetClass([artificial],explainer.model.default_cfg,0,True,-1,1.0)
     batch=utils_general.custom_collate([ds[0],ds[1]])
-    with torch.no_grad():
-        masked=explainer.model(batch)
-        ordinary=explainer.model(batch[0][:1])
-    if not torch.isfinite(masked).all(): raise ValueError('Non-finite all-one/zero mask boundary output')
-    np.testing.assert_allclose(masked[:1].cpu().numpy(),ordinary.cpu().numpy(),rtol=1e-4,atol=1e-4)
+    boundary=check_mask_boundary(explainer.model,batch,output)
+    checkpoint('mask_boundary', mask_boundary=boundary)
     # Independent nonorthogonal algebra fixture exercises complement and signed relevance.
     fixture=np.array([[1.,2.,3.],[-4.,1.,0.]])
     weight=np.array([2.,-3.,1.]);fixture_bias=4.

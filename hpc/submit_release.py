@@ -111,7 +111,14 @@ def build_plan(args):
     if args.mode == "reference":
         if not plan["config"].get("save_scientific_records"):
             raise ValueError("Reference run must save scientific records")
-        if args.after_probe:
+        if args.prerequisite_report:
+            if args.after_probe or args.probe_launch or args.probe_launch_sha256:
+                raise ValueError('Choose one prerequisite route')
+            plan['prerequisite_report'] = absolute_path(args.prerequisite_report)
+            if not re.fullmatch(r'[a-f0-9]{64}', args.prerequisite_report_sha256 or ''):
+                raise ValueError('Completed prerequisite report SHA256 required')
+            plan['prerequisite_report_sha256'] = args.prerequisite_report_sha256
+        elif args.after_probe:
             if not re.fullmatch(r"[1-9][0-9]*", args.after_probe) or args.probe_launch or args.probe_launch_sha256:
                 raise ValueError("Use one numeric after-probe job ID without a completed-probe override")
             if not re.fullmatch(r"[a-f0-9]{40}", args.probe_commit or ""):
@@ -197,6 +204,8 @@ def arguments(argv=None):
     p.add_argument("--dataset-manifest-sha256")
     p.add_argument("--after-probe", help="Queue one reference run after this existing probe succeeds")
     p.add_argument("--probe-commit", help="Exact research commit used by the existing deferred probe")
+    p.add_argument('--prerequisite-report', help='Completed cached-check report resolving the preserved failure')
+    p.add_argument('--prerequisite-report-sha256')
     p.add_argument("--probe-launch")
     p.add_argument("--probe-launch-sha256")
     p.add_argument("--config", type=Path)

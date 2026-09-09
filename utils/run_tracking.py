@@ -104,6 +104,19 @@ class RunTracker:
         atomic_json(self.output / 'run_manifest.json', self.manifest)
         self.progress('RUNNING')
 
+    def record_precision(self, precision):
+        self.manifest['precision'] = precision
+        atomic_json(self.output / 'run_manifest.json', self.manifest)
+
+    def publish_scientific(self):
+        directory = self.output / 'scientific'
+        if directory.is_dir():
+            for path in directory.iterdir():
+                if path.is_file() and path.suffix in ('.npz', '.json'):
+                    name = str(path.relative_to(self.output))
+                    if name not in self.artifacts:
+                        self.artifacts[name] = {'bytes': path.stat().st_size, 'sha256': sha256(path)}
+
     def record_inputs(self, split, images):
         self.manifest['input_files'][split] = [
             {'path': str(Path(image.filename).resolve()), 'sha256': sha256(image.filename)} for image in images]
@@ -120,6 +133,9 @@ class RunTracker:
                 name = sheets[last_completed_stage]
                 path = self.output / name
                 self.artifacts[name] = {'bytes': path.stat().st_size, 'sha256': sha256(path)}
+        if last_completed_stage in ('concept_scoring_and_completeness', 'training_assignment_and_prototypes',
+                                    'validation_assignment_and_prototypes') or status == 'FAILED':
+            self.publish_scientific()
         atomic_json(self.output / 'artifacts.json',
                     {'schema_version': 1, **self.identity, 'files': self.artifacts})
         atomic_json(self.output / 'progress.json', {

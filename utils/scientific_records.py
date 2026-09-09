@@ -64,19 +64,10 @@ def save_split(explainer, images, activations, output, split, class_index):
     acts=np.stack([s.model_act for s in segments]);logits=np.stack([s.model_pred for s in segments])
     weight=explainer.model.fc.weight.detach().cpu().numpy()
     bias=explainer.model.fc.bias.detach().cpu().numpy()
-    # All 1000 logits verify the feature hook, then target-class decomposition includes complement.
-    fc,_=numerical_checks(acts,logits,weight,bias,None)
-    checks,samples=numerical_checks(acts,logits[:,class_index],weight[class_index],bias[class_index],
-                                   explainer.concept_bases+[explainer.compl_basis])
-    checks['all_classes_fc']=fc
-    observed_relevance=explainer.concept_relevances(acts[samples['sample_indices']],n_jobs=1)
-    np.testing.assert_allclose(observed_relevance,samples['sample_local_relevance'],rtol=1e-5,atol=1e-5)
-    checks['released_concept_relevances_agrees']=True
-    checks['finite_concept_activations']=bool(np.isfinite(activations).all())
-    if not checks['finite_concept_activations']:
-        raise ValueError('Non-finite concept assignments')
-    np.savez_compressed(output/(split+'.npz'),features=acts,logits=logits,
-                        concept_activations=activations,assignments=np.argmax(activations,axis=1),**samples)
+    # Save raw evidence first: a failing check must not erase diagnostic inputs.
+    raw = dict(features=acts, logits=logits, concept_activations=activations,
+               assignments=np.argmax(activations,axis=1))
+    np.savez_compressed(output/(split+'.npz'), **raw)
     mapping=[]
     for image_index,im in enumerate(images):
         for segment_index,segment in enumerate(im.segments):
@@ -84,5 +75,23 @@ def save_split(explainer, images, activations, output, split, class_index):
                             'mask_shape':list(segment.mask.shape),'mask_dtype':str(segment.mask.dtype),
                             'mask_sha256':hashlib.sha256(segment.mask.tobytes()).hexdigest()})
     (output/(split+'_segments.json')).write_text(json.dumps(mapping,indent=2)+'\n')
+    try:
+        # All 1000 logits verify the feature hook, then target-class decomposition includes complement.
+        fc,_=numerical_checks(acts,logits,weight,bias,None)
+        checks,samples=numerical_checks(acts,logits[:,class_index],weight[class_index],bias[class_index],
+                                       explainer.concept_bases+[explainer.compl_basis])
+        checks['all_classes_fc']=fc
+        observed_relevance=explainer.concept_relevances(acts[samples['sample_indices']],n_jobs=1)
+        np.testing.assert_allclose(observed_relevance,samples['sample_local_relevance'],rtol=1e-5,atol=1e-5)
+        checks['released_concept_relevances_agrees']=True
+        checks['finite_concept_activations']=bool(np.isfinite(activations).all())
+        if not checks['finite_concept_activations']:
+            raise ValueError('Non-finite concept assignments')
+    except BaseException as exc:
+        (output/(split+'_checks.json')).write_text(json.dumps(
+            {'status':'FAILED','error':f'{type(exc).__name__}: {exc}'},indent=2)+'\n')
+        raise
+    np.savez_compressed(output/(split+'.npz'), **raw, **samples)
+    checks['status']='PASS'
     (output/(split+'_checks.json')).write_text(json.dumps(checks,indent=2)+'\n')
     return checks

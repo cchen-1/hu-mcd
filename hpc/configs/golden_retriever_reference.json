@@ -35,5 +35,13 @@
   "dataset_manifest_sha256": "dafeafcaa64d2379a236500d443e18f8a27520b9a0ad0288e79bdab7c683cd74",
   "sam_checkpoint_sha256": "a7bf3b02f3ebf1267aba913ff637d9a2d5c33d3173bb679e46d9f338c26f262e",
   "resnet_checkpoint_sha256": "14fe96d1f9fb311a60490082d2077e6e60427dcfe21839ddf934cce948f72b0f",
-  "save_scientific_records": true
+  "save_scientific_records": true,
+  "precision": {
+    "cudnn_allow_tf32": true,
+    "matmul_allow_tf32": false,
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": false,
+    "deterministic_algorithms": false,
+    "float32_matmul_precision": "highest"
+  }
 }
