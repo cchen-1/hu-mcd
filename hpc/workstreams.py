@@ -41,6 +41,10 @@ def submit(plan, state, execute=False):
     if r.get('exclude'):
         if not re.fullmatch(r'bun[0-9]{3}',r['exclude']):raise ValueError('Require one explicit compute node to exclude')
         lines.append('#SBATCH --exclude='+r['exclude'])
+    if r.get('nodelist'):
+        if not re.fullmatch(r'bun[0-9]{3}',r['nodelist']):raise ValueError('Require one explicit compute node')
+        if r['nodelist']==r.get('exclude'):raise ValueError('Cannot select and exclude the same node')
+        lines.append('#SBATCH --nodelist='+r['nodelist'])
     lines+=['set -euo pipefail','[[ -n "${SLURM_JOB_ID:-}" && "$(hostname -s)" =~ ^bun[0-9]{3}$ ]]','release='+shlex.quote(release),'source "$release/hpc/lib.sh"','require_compute_node','load_humcd_environment','export PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg','export TORCH_HOME='+shlex.quote(root+'/models/torch'),'export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1','export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK" MKL_NUM_THREADS="$SLURM_CPUS_PER_TASK" OPENBLAS_NUM_THREADS="$SLURM_CPUS_PER_TASK" LOKY_MAX_CPU_COUNT="$SLURM_CPUS_PER_TASK"','cd "$release"','python -m hpc.workstream_runtime '+shlex.quote(base64.b64encode(json.dumps(plan,sort_keys=True).encode()).decode())]
     script='\n'.join(lines)+'\n';subprocess.run(['bash','-n'],input=script,text=True,check=True)
     receipt=state/(key+'.submission.json')
