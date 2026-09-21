@@ -27,9 +27,15 @@ def submit(plan, state, execute=False):
     jobname='humcd-reference' if plan['mode']=='discover' else 'humcd-'+key
     log='reference' if plan['mode']=='discover' else 'workstream'
     lines=['#!/usr/bin/env bash','#SBATCH --job-name='+jobname,'#SBATCH --account=a_ai_collab','#SBATCH --partition='+r['partition'],'#SBATCH --qos='+r['qos'],'#SBATCH --nodes=1','#SBATCH --ntasks=1','#SBATCH --cpus-per-task='+str(r['cpus']),'#SBATCH --mem='+r['memory'],'#SBATCH --time='+r['time'],'#SBATCH --output='+root+'/logs/'+log+'-%j.out','#SBATCH --error='+root+'/logs/'+log+'-%j.err']
+    dependencies=[]
+    if plan.get('deployment_afterok'):
+        if not str(plan['deployment_afterok']).isdigit():raise ValueError('Numeric deployment dependency required')
+        dependencies.append('afterok:'+str(plan['deployment_afterok']))
     if plan.get('resource_afterany'):
         if not all(str(x).isdigit() for x in plan['resource_afterany']):raise ValueError('Numeric resource dependency IDs required')
-        lines.append('#SBATCH --dependency=afterany:'+':'.join(str(x) for x in plan['resource_afterany']))
+        dependencies.append('afterany:'+':'.join(str(x) for x in plan['resource_afterany']))
+    if dependencies:
+        lines.append('#SBATCH --dependency='+','.join(dependencies))
         lines.append('#SBATCH --kill-on-invalid-dep=yes')
     if r.get('gpu'):lines.append('#SBATCH --gres=gpu:'+r['gpu'])
     lines+=['set -euo pipefail','[[ -n "${SLURM_JOB_ID:-}" && "$(hostname -s)" =~ ^bun[0-9]{3}$ ]]','release='+shlex.quote(release),'source "$release/hpc/lib.sh"','require_compute_node','load_humcd_environment','export PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg','export TORCH_HOME='+shlex.quote(root+'/models/torch'),'export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1','export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK" MKL_NUM_THREADS="$SLURM_CPUS_PER_TASK" OPENBLAS_NUM_THREADS="$SLURM_CPUS_PER_TASK" LOKY_MAX_CPU_COUNT="$SLURM_CPUS_PER_TASK"','cd "$release"','python -m hpc.workstream_runtime '+shlex.quote(base64.b64encode(json.dumps(plan,sort_keys=True).encode()).decode())]
