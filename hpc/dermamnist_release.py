@@ -77,8 +77,10 @@ def inventory(roots, out):
     return rows
 
 
-def fetch_once(name, destination, out, max_seconds):
+def fetch_once(name, destination, out, max_seconds, allow_download=True):
     """No retries, resume or alternative host; partial evidence remains on error."""
+    if allow_download is not True:
+        raise RuntimeError('Reuse-only preparation: required verified file unavailable; network download disabled: '+name)
     size, expected = FILES[name]
     url='https://zenodo.org/api/records/12739457/files/'+name+'/content'
     part=Path(str(destination)+'.part')
@@ -199,7 +201,8 @@ def run(config,out):
             else:
                 remaining=int(6600-(time.monotonic()-start))
                 if remaining<60:raise RuntimeError('Download time budget exhausted; no extension')
-                acquired[name]=fetch_once(name,dest,out,min(180,remaining) if name.endswith('.csv') else remaining)
+                acquired[name]=fetch_once(name,dest,out,min(180,remaining) if name.endswith('.csv') else remaining,
+                                          allow_download=config.get('allow_download',True))
             atomic_json(provenance/'acquisition.json',acquired)
         mark('array_and_identity_audit')
         audit=Path(__file__).with_name('prepare_dermamnist.py')

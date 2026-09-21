@@ -11,6 +11,15 @@ from hpc.dermamnist_release import inventory,fetch_once,publish_archive,verify_a
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_reuse_only_never_falls_back_to_network(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p=Path(tmp)
+            with patch('hpc.dermamnist_release.subprocess.run') as call:
+                with self.assertRaisesRegex(RuntimeError,'network download disabled'):
+                    fetch_once('dermamnist_corrected_224.npz',p/'file.npz',p,60,allow_download=False)
+                call.assert_not_called()
+            self.assertEqual(list(p.iterdir()),[])
+
     def test_inventory_requires_full_hash_not_basename(self):
         with tempfile.TemporaryDirectory() as tmp:
             p=Path(tmp);root=p/'source';root.mkdir();out=p/'out';out.mkdir()
