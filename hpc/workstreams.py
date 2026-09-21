@@ -23,7 +23,7 @@ def submit(plan, state, execute=False):
         if not re.fullmatch('[A-Za-z0-9_-]+',r[name]):raise ValueError('Unsafe resource option')
     if not re.fullmatch('[1-9][0-9]*[MG]',r['memory']) or not re.fullmatch('[0-9]{2}:[0-5][0-9]:[0-5][0-9]',r['time']) or type(r['cpus']) is not int or r['cpus']<1:raise ValueError('Invalid resources')
     if r.get('gpu') and not re.fullmatch('[A-Za-z0-9_]+:1',r['gpu']):raise ValueError('Require one explicit GPU type')
-    if plan['mode'] in ('inventory','publish','baseline-readiness','derm7pt-audit','dermamnist-release') and r.get('gpu'):raise ValueError('CPU preparation must not request GPU')
+    if plan['mode'] in ('inventory','publish','baseline-readiness','derm7pt-audit','dermamnist-release','rdm-access-check') and r.get('gpu'):raise ValueError('CPU preparation must not request GPU')
     jobname='humcd-reference' if plan['mode']=='discover' else 'humcd-'+key
     log='reference' if plan['mode']=='discover' else 'workstream'
     lines=['#!/usr/bin/env bash','#SBATCH --job-name='+jobname,'#SBATCH --account=a_ai_collab','#SBATCH --partition='+r['partition'],'#SBATCH --qos='+r['qos'],'#SBATCH --nodes=1','#SBATCH --ntasks=1','#SBATCH --cpus-per-task='+str(r['cpus']),'#SBATCH --mem='+r['memory'],'#SBATCH --time='+r['time'],'#SBATCH --output='+root+'/logs/'+log+'-%j.out','#SBATCH --error='+root+'/logs/'+log+'-%j.err']
@@ -38,6 +38,9 @@ def submit(plan, state, execute=False):
         lines.append('#SBATCH --dependency='+','.join(dependencies))
         lines.append('#SBATCH --kill-on-invalid-dep=yes')
     if r.get('gpu'):lines.append('#SBATCH --gres=gpu:'+r['gpu'])
+    if r.get('exclude'):
+        if not re.fullmatch(r'bun[0-9]{3}',r['exclude']):raise ValueError('Require one explicit compute node to exclude')
+        lines.append('#SBATCH --exclude='+r['exclude'])
     lines+=['set -euo pipefail','[[ -n "${SLURM_JOB_ID:-}" && "$(hostname -s)" =~ ^bun[0-9]{3}$ ]]','release='+shlex.quote(release),'source "$release/hpc/lib.sh"','require_compute_node','load_humcd_environment','export PYTHONDONTWRITEBYTECODE=1 MPLBACKEND=Agg','export TORCH_HOME='+shlex.quote(root+'/models/torch'),'export HF_HUB_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1','export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK" MKL_NUM_THREADS="$SLURM_CPUS_PER_TASK" OPENBLAS_NUM_THREADS="$SLURM_CPUS_PER_TASK" LOKY_MAX_CPU_COUNT="$SLURM_CPUS_PER_TASK"','cd "$release"','python -m hpc.workstream_runtime '+shlex.quote(base64.b64encode(json.dumps(plan,sort_keys=True).encode()).decode())]
     script='\n'.join(lines)+'\n';subprocess.run(['bash','-n'],input=script,text=True,check=True)
     receipt=state/(key+'.submission.json')
