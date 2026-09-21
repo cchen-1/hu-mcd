@@ -23,7 +23,7 @@ def submit(plan, state, execute=False):
         if not re.fullmatch('[A-Za-z0-9_-]+',r[name]):raise ValueError('Unsafe resource option')
     if not re.fullmatch('[1-9][0-9]*[MG]',r['memory']) or not re.fullmatch('[0-9]{2}:[0-5][0-9]:[0-5][0-9]',r['time']) or type(r['cpus']) is not int or r['cpus']<1:raise ValueError('Invalid resources')
     if r.get('gpu') and not re.fullmatch('[A-Za-z0-9_]+:1',r['gpu']):raise ValueError('Require one explicit GPU type')
-    if plan['mode'] in ('inventory','publish','baseline-readiness') and r.get('gpu'):raise ValueError('CPU preparation must not request GPU')
+    if plan['mode'] in ('inventory','publish','baseline-readiness','derm7pt-audit','dermamnist-release') and r.get('gpu'):raise ValueError('CPU preparation must not request GPU')
     jobname='humcd-reference' if plan['mode']=='discover' else 'humcd-'+key
     log='reference' if plan['mode']=='discover' else 'workstream'
     lines=['#!/usr/bin/env bash','#SBATCH --job-name='+jobname,'#SBATCH --account=a_ai_collab','#SBATCH --partition='+r['partition'],'#SBATCH --qos='+r['qos'],'#SBATCH --nodes=1','#SBATCH --ntasks=1','#SBATCH --cpus-per-task='+str(r['cpus']),'#SBATCH --mem='+r['memory'],'#SBATCH --time='+r['time'],'#SBATCH --output='+root+'/logs/'+log+'-%j.out','#SBATCH --error='+root+'/logs/'+log+'-%j.err']
