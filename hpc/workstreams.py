@@ -15,6 +15,11 @@ from hpc.submit_release import absolute_path
 
 
 def submit(plan, state, execute=False):
+    if plan['mode'] in ('medical-discovery-inputs','medical-discovery'):
+        from hpc.medical_discovery import validate, CAPS as DISCOVERY_CAPS
+        validate(plan['config'],approved=execute)
+        if any(plan['resources'].get(k)!=v for k,v in DISCOVERY_CAPS[plan['mode']].items()):
+            raise ValueError('Discovery scheduler resources differ from approval')
     if plan['mode'] in ('medical-overlap', 'medical-classifier'):
         from hpc.medical_protocol import validate_config, CAPS
         validate_config(plan['config'], plan['mode'], approved=execute)
@@ -29,7 +34,7 @@ def submit(plan, state, execute=False):
         if not re.fullmatch('[A-Za-z0-9_-]+',r[name]):raise ValueError('Unsafe resource option')
     if not re.fullmatch('[1-9][0-9]*[MG]',r['memory']) or not re.fullmatch('[0-9]{2}:[0-5][0-9]:[0-5][0-9]',r['time']) or type(r['cpus']) is not int or r['cpus']<1:raise ValueError('Invalid resources')
     if r.get('gpu') and not re.fullmatch('[A-Za-z0-9_]+:1',r['gpu']):raise ValueError('Require one explicit GPU type')
-    if plan['mode'] in ('inventory','publish','baseline-readiness','derm7pt-audit','dermamnist-release','rdm-access-check','medical-overlap') and r.get('gpu'):raise ValueError('CPU preparation must not request GPU')
+    if plan['mode'] in ('inventory','publish','baseline-readiness','derm7pt-audit','dermamnist-release','rdm-access-check','medical-overlap','medical-discovery-inputs') and r.get('gpu'):raise ValueError('CPU preparation must not request GPU')
     jobname='humcd-reference' if plan['mode']=='discover' else 'humcd-'+key
     log='reference' if plan['mode']=='discover' else 'workstream'
     lines=['#!/usr/bin/env bash','#SBATCH --job-name='+jobname,'#SBATCH --account=a_ai_collab','#SBATCH --partition='+r['partition'],'#SBATCH --qos='+r['qos'],'#SBATCH --nodes=1','#SBATCH --ntasks=1','#SBATCH --cpus-per-task='+str(r['cpus']),'#SBATCH --mem='+r['memory'],'#SBATCH --time='+r['time'],'#SBATCH --output='+root+'/logs/'+log+'-%j.out','#SBATCH --error='+root+'/logs/'+log+'-%j.err']
@@ -40,6 +45,9 @@ def submit(plan, state, execute=False):
     if plan.get('resource_afterany'):
         if not all(str(x).isdigit() for x in plan['resource_afterany']):raise ValueError('Numeric resource dependency IDs required')
         dependencies.append('afterany:'+':'.join(str(x) for x in plan['resource_afterany']))
+    if plan.get('prerequisite_afterok'):
+        if not all(str(x).isdigit() for x in plan['prerequisite_afterok']):raise ValueError('Numeric scientific dependency IDs required')
+        dependencies.append('afterok:'+':'.join(str(x) for x in plan['prerequisite_afterok']))
     if dependencies:
         lines.append('#SBATCH --dependency='+','.join(dependencies))
         lines.append('#SBATCH --kill-on-invalid-dep=yes')
