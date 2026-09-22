@@ -1,0 +1,113 @@
+{
+  "mode": "medical-classifier",
+  "protocol": {
+    "model": "timm0.6.13-standard-resnet50",
+    "labels": [
+      "akiec",
+      "bcc",
+      "bkl",
+      "df",
+      "mel",
+      "nv",
+      "vasc"
+    ],
+    "epochs": 50,
+    "batch_size": 64,
+    "optimizer": {
+      "name": "Adam",
+      "lr": 0.0001,
+      "betas": [
+        0.9,
+        0.999
+      ],
+      "eps": 1e-08,
+      "weight_decay": 0
+    },
+    "schedule": {
+      "drop_after_completed_epochs": [
+        25,
+        38
+      ],
+      "gamma": 0.1
+    },
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "precision": {
+      "cudnn_allow_tf32": true,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "deterministic_algorithms": false,
+      "float32_matmul_precision": "highest",
+      "matmul_allow_tf32": false
+    },
+    "amp": false,
+    "protocol_id": "MED26-002/M-v1",
+    "inputs": {
+      "source_npz": {
+        "path": "/scratch/user/uqcche38/datasets/dermamnist-c/zenodo-12739457/work/28738133/raw/dermamnist_corrected_224.npz",
+        "sha256": "f8d80f4fac5a0a1f53256e0c337456a8ab8020828a94a9eb8a1eb8ef5d748486"
+      },
+      "source_manifest": {
+        "path": "/scratch/user/uqcche38/datasets/dermamnist-c/zenodo-12739457/work/28738133/manifests/image_manifest.csv",
+        "sha256": "42a57e7720d11e8c9a8f547f7ae1b96c34832c370ef32ffb2d6c4343fa0623b4"
+      },
+      "initializer": {
+        "path": "/scratch/user/uqcche38/hu-mcd/models/torch/hub/checkpoints/resnet50_a1_0-14fe96d1.pth",
+        "sha256": "14fe96d1f9fb311a60490082d2077e6e60427dcfe21839ddf934cce948f72b0f"
+      }
+    },
+    "split_counts": {
+      "train": 8215,
+      "val": 573,
+      "test": 1227
+    },
+    "workload": {
+      "images": 8215,
+      "epochs": 50,
+      "batch_size": 64,
+      "steps_per_epoch": 129,
+      "optimizer_updates": 6450,
+      "training_image_visits": 410750,
+      "validation_image_visits": 28650,
+      "final_batch_size": 23
+    },
+    "classifier_training_seed": 43,
+    "discovery_sampling_seed": "SEPARATE_APPROVED_DIRECTION_43_NOT_USED_BY_CLASSIFIER",
+    "drop_last": false,
+    "resume": false,
+    "automatic_extension": false,
+    "work_seconds_ceiling": 14220,
+    "output_bytes_ceiling": 5368709120,
+    "augmentation": "independent_horizontal_vertical_flips_p0.5_train_only",
+    "loss": "unweighted_CE_no_smoothing",
+    "selection": "seven_class_validation_macroOVR_AUC_strict_improvement_earliest_tie",
+    "test_rule": "full_schedule_then_freeze_best_sha_then_adapter_gate_then_one_final_test",
+    "downstream_medical_discovery": false,
+    "derm7pt_inference": false,
+    "goal": "Explain one fixed classifier; not cross-training-seed stability"
+  },
+  "protocol_sha256": "15035163fc088076f537a43b4ab08988b586380641de064675d095262ba70b8b",
+  "resources": {
+    "cpus": 4,
+    "memory": "16G",
+    "time": "04:00:00",
+    "gpu": "l40s:1"
+  },
+  "authorization": {
+    "status": "APPROVED",
+    "user_decision": "批准 H＋R101＋S描述性＋M50/batch64/训练seed43，资源及范围按最终协议执行，包含所列部署预算。请绑定完整代码提交和实际配置，完成推送、部署及提交前检查后，分别提交H与M；无依赖的任务不互相等待。",
+    "approved_protocol_sha256": "15035163fc088076f537a43b4ab08988b586380641de064675d095262ba70b8b",
+    "decision_id": "MED26-HRSM-APPROVAL-20260922",
+    "recorded_at_utc": "2026-09-22T00:28:12.768388+00:00"
+  },
+  "preparation_status": "LOCAL_SOFTWARE_CHECKS_PASS_APPROVED_PENDING_DEPLOYMENT",
+  "execution_commit": null
+}
