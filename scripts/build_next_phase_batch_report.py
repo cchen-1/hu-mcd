@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/'artifacts/bunya/batch-review-20260922';B=OUT/'bundle'
+sys.path.insert(0,str(ROOT))
 for d in ['figures','examples','images']: (B/d).mkdir(parents=True,exist_ok=True)
 J=lambda p:json.loads(Path(p).read_text())
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
@@ -26,6 +27,11 @@ def page(title,body):return '<!doctype html><html lang="zh"><meta charset="utf-8
 a=J(OUT/'acceptance-both.json');A=a['robustness'];M=a['medical'];d1=ROOT/M['collection'];d0=J(ROOT/'artifacts/bunya/medical-discovery-20260922/completed-prerequisite-evidence/dataset_manifest.json')
 for f in OUT.glob('*.csv'):shutil.copy2(f,B/f.name)
 shutil.copy2(OUT/'acceptance-both.json',B/'acceptance.json');shutil.copy2(OUT/'final-sacct.txt',B/'final-sacct.txt')
+for name in ['all-worker-anomalies.json','batch-anomaly-updates.json','classifier-binding-and-heldout-replay.json','shared-science-version-comparison.json','current-summary.json']:
+    shutil.copy2(OUT/name,B/name)
+shutil.copy2(ROOT/'docs/BATCH_RESULTS_20260922.zh-en.md',B/'results.zh-en.md')
+shutil.copy2(ROOT/'docs/MEDICAL_EXTERNAL_EXECUTION_20260922.zh-en.md',B/'external-protocol.zh-en.md')
+table(B/'medical-complement-index.csv',[dict(concept_id='HUMCD-MEL-COMPLEMENT',basis_index=1,cluster_id='NOT_APPLICABLE',is_learned=False,dimension=2016,global_importance=M['result']['concept_scores'][-1],training_assignments=335,held_out_assignments=61,review_status='UNREVIEWED')])
 source=Path('/mnt/c/Users/uqcche38/Downloads/dermamnist_corrected_224.npz')
 images={}
 with np.load(source,allow_pickle=False) as z:
@@ -84,6 +90,7 @@ medical+='<p>模型为固定epoch10医学ResNet50；采样seed43与分类器训�
 medical+=render_table(M['splits'],['role','images','lesions','raw_regions','retained_regions','zero_features','learned_assignments','complement_assignments','MEL_predictions'])+'<figure><img src="figures/medical-summary.png" alt="Initial cluster to final assignment and split assignment shares"><figcaption><a href="figures/medical-summary.pdf">PDF</a> · <a href="medical-cluster-to-assignment.csv">CSV</a></figcaption></figure>'
 medical+='<div class="notice">零特征：训练68/917（7.42%），留出14/157（8.92%）；输入有效掩码均非空。这是观测到的模型／mask路径现象，尚未逐例证明消失机制。3个cluster数量由原片段数启发式产生；不能据此断言医学仅有一个语义概念。<br><span class="en">Zero features:68/917 training and14/157 held-out despite nonempty effective masks. Their per-region disappearance mechanism has not been audited. The initial3-cluster count follows the released segment-count heuristic; one retained subspace does not imply one medical semantic concept.</span></div>'
 medical+='<p>来源版本5623abe8a843deaea7ab838a8c76c41afbad565e，作业28792059；分类器SHA07a6f65d…655。原图只有224×224有效分辨率，导出放大不增加医学细节。下列均为模型实际使用的有效mask，青色表示选中，灰色表示遮蔽，不是病灶真值。</p><p class="en">Job28792059, commit5623abe8a843deaea7ab838a8c76c41afbad565e; classifier SHA07a6f65d…655. Native inputs contain224×224 pixels; enlarged exports add no medical detail. Teal marks the selected effective region; grey marks hidden pixels. These are not lesion ground-truth masks.</p>'
+medical+='<p><b>待确认的视觉观察：</b>已查看导出图中固定top3和随机3、训练和留出各组共12例。部分top例包含大块色素区域；随机留出中ISIC_0026150、ISIC_0029454的中心被遮蔽，仍归C001，提示同一子空间可包含不同区域形态。只是该展示样本的非专业AI观察，不是全部成员结论或医学语义命名。</p><p class="en"><b>Provisional visual observation:</b> the twelve fixed top3/random3 examples across training and held-out were inspected. Some top examples retain broad pigmented areas; held-out random examples ISIC_0026150 and ISIC_0029454 hide central areas yet belong to C001. This suggests differing region patterns within the same subspace. It is a nonclinical AI observation of these displayed examples, not a population or medical-semantic conclusion.</p>'
 medical+='<h2>完整概念索引 / Complete concept index</h2><p><a href="#HUMCD-MEL-C001">HUMCD-MEL-C001（唯一学习概念 / sole learned concept）</a> · <a href="#HUMCD-MEL-COMPLEMENT">HUMCD-MEL-COMPLEMENT（补空间，非学习概念 / complement）</a></p><p>全部学习概念和top-K视图在本轮相同（K≥1），无需重新训练。审阅状态均为未审阅，无AI医学命名。</p><p class="en">All learned concepts and top-K are identical here forK≥1. Review status remains unreviewed; no AI medical labels are asserted.</p>'
 for ci,cid in enumerate(['HUMCD-MEL-C001','HUMCD-MEL-COMPLEMENT']):
     medical+='<h2 id="'+cid+'">'+cid+'</h2>'
@@ -116,6 +123,9 @@ rob+='<h2>失败证据 / Failure evidence</h2>'+render_table(A['reduced_batch_co
 rob+='<p>直接事实：8→7行的不变特征偏差超过1e−4检查门槛，所有失败均在同一新增缩批路径；原batch特征逐元素一致。可能原因是batch形状触发GPU数值路径变化，尚未用GPU对照验证具体算子或TF32因果。不能称为已证实源码数学错误，也不放宽阈值。建议后续仅修正保持batch槽位的执行方式并验收；需单独批准重提失败的四类。</p><p class="en">Observed:8→7 row controls exceed the1e−4 gate while original-batch features match exactly; all failures share the new reduced-batch path. GPU arithmetic changes induced by batch shape are a plausible explanation, not an established operator/TF32 cause. No tolerance relaxation or confirmed upstream mathematical-bug claim. A targeted fixed-slot execution correction and four-class rerun require separate approval.</p>'
 rob+='<p>主分母是基线有效区域；扰动后无效仍保留在分母。无基线有效区域的图为不可评价。每图先平均，类内配对bootstrap2000次、seed20260921；同时提供区域加权与两侧有效条件指标，不能混用。/ Primary denominators retain invalidated regions. Images lacking valid baseline regions are unevaluable. Image-level paired bootstrap uses2000 draws, seed20260921. Region-weighted and both-valid conditional measures are separate.</p>'
 rob+='<p><a href="robustness-per-image.csv">Per-image CSV</a> · <a href="robustness-strata.csv">Frozen area/margin strata</a> · <a href="robustness-transitions.csv">Concept/complement/invalid transitions</a></p>'
+rob+='<p><a href="robustness-regions-all-conditions.csv">全部28435条region-condition状态、几何与原赢家间隔 / All28435 regional states, geometry and original-winner margins</a> · <a href="robustness-geometry-score-summary.csv">Geometry/feature summaries</a></p>'
+from scripts.build_mask_sensitivity_examples import build as mask_examples
+rob+=mask_examples(ROOT,OUT,B)
 (B/'robustness.html').write_text(page('掩码敏感性：十类轻度侵蚀可分析，四类后续条件缺失 / Mask sensitivity: partial completion',rob))
 summary='<div class="good"><b>已完成验收 / Accepted evidence</b><p>十类不变对照及半径1侵蚀；六类全部五条件；医学400/70发现。仅有一个医学学习概念不构成执行失败，但解释粒度有限。</p><p class="en">Ten-class identity/radius1 erosion; six complete five-condition classes; medical400/70 discovery. One learned medical concept is not an execution failure, but limits explanatory granularity.</p></div><p><a href="medical.html"><b>医学概念：训练与留出并排，原型／随机／初始cluster / Medical concept gallery</b></a></p><p><a href="robustness.html"><b>敏感性结果与四类失败诊断 / Sensitivity and failed-control diagnosis</b></a></p><figure><img src="figures/medical-summary.png" alt="Medical discovery overview"></figure><figure><img src="figures/robustness.png" alt="Robustness overview"></figure>'
 summary+='<h2>结论边界 / Interpretation limits</h2><p>重构与映射通过仅说明数值与工程一致。概念名称、原型与随机成员的语义一致性仍待人工审阅；不能把completeness当可理解性。外部E224/R101/S协议和预算已批准，执行状态见主报告当前批次入口；此页没有外部结果曲线或虚构数值。</p><p class="en">Reconstruction and mapping establish numerical/engineering consistency. Semantic naming and prototype–random coherence remain for manual review; completeness is not understandability. E224/R101/S and its budget are approved; consult the main report for submission status. No external outcome is fabricated here.</p>'
@@ -123,6 +133,7 @@ summary+='<p>旧H重叠检查：R101中20例有214个相似候选，尚非确认
 summary+='<h2>来源与可复查文件 / Provenance and inspectable files</h2><p>A执行版本40418edfa4e4ac81eda02d954fe59de52a0f14f0；医学D1版本5623abe8a843deaea7ab838a8c76c41afbad565e。生成仅使用本地已收集缓存，无新预测、拟合、选样或远端文件处理。/ Generated only from collected local caches, without new predictions, fitting or selection.</p><p>Generated UTC '+esc(datetime.now(timezone.utc).isoformat())+'</p><ul>'
 for f in sorted(B.glob('*.csv')):summary+='<li><a href="'+f.name+'">'+f.name+'</a></li>'
 summary+='</ul><p><a href="acceptance.json">完整验收凭据 / Acceptance</a> · <a href="final-sacct.txt">最终Slurm状态 / Final Slurm accounting</a></p>'
+summary+='<h2>异常与完整说明 / Anomalies and full notes</h2><p><a href="batch-anomaly-updates.json">统一异常更新（事实／推断／状态） / Canonical issue updates</a> · <a href="all-worker-anomalies.json">全部原始worker警告与失败 / All raw worker warnings and failures</a> · <a href="results.zh-en.md">中英文完整说明 / Full bilingual notes</a> · <a href="external-protocol.zh-en.md">已批准外部协议 / Approved external protocol</a></p><p>新外部部署28796207、推理28796209已提交，首次核对待依赖；本页不声称它们已完成。 / Externaldeployment28796207 andinference28796209 submitted; pendingdependency at the sole check, not claimed complete.</p>'
 (B/'index.html').write_text(page('两条工作线验收与概念审阅 / Two-workstream acceptance and concept review',summary))
 # High-resolution slide panel: original cached top3/random3, two splits; no cherry picking.
 fig,axes=plt.subplots(4,3,figsize=(14,8))
