@@ -1,0 +1,49 @@
+{
+  "mode": "medical-overlap",
+  "protocol": {
+    "protocol_id": "MED26-008/H-v1",
+    "inputs": {
+      "source_npz": {
+        "path": "/scratch/user/uqcche38/datasets/dermamnist-c/zenodo-12739457/work/28738133/raw/dermamnist_corrected_224.npz",
+        "sha256": "f8d80f4fac5a0a1f53256e0c337456a8ab8020828a94a9eb8a1eb8ef5d748486"
+      },
+      "source_manifest": {
+        "path": "/scratch/user/uqcche38/datasets/dermamnist-c/zenodo-12739457/work/28738133/manifests/image_manifest.csv",
+        "sha256": "42a57e7720d11e8c9a8f547f7ae1b96c34832c370ef32ffb2d6c4343fa0623b4"
+      },
+      "derm_inventory": {
+        "path": "/scratch/user/uqcche38/hu-mcd/outputs/workstreams/28734478/image_inventory.json",
+        "sha256": "50422b111e7c50fe861cf0f656d79885083fbd10def26805a70ec1a588938b5c"
+      }
+    },
+    "derm_root": "/scratch/user/uqcche38/datasets/derm7pt/release_v0/staged/28734478/extracted/release_v0",
+    "source_images": 10015,
+    "derm_images": 1011,
+    "distance_threshold": 6,
+    "hash_bits": 64,
+    "orientations": "D4: original rotations0/90/180/270 then mirror rotations",
+    "phash": "PIL_RGB_to_L_LANCZOS_32x32_scipy_DCTII_unnormalized_low8x8_median_including_DC_strict_greater",
+    "dhash": "PIL_RGB_to_L_LANCZOS_9x8_strict_right_greater_than_left",
+    "canonical_exact": "Native decoded RGB geometry plus PIL bicubic224x224 comparison; no EXIF transpose",
+    "candidate_rule": "Either hash minimum D4 distance<=6 OR exact OR first nearest per hash; source-ID tie break",
+    "first_review_queue_limit": 200,
+    "retain_all_candidates": true,
+    "automatic_exclusions": false,
+    "work_seconds_ceiling": 1680,
+    "output_bytes_ceiling": 2147483648
+  },
+  "protocol_sha256": "f6d997ff482216e2917e63ec023ad4eb48ea5befafca3b7a9e70fb27df28baed",
+  "resources": {
+    "cpus": 4,
+    "memory": "8G",
+    "time": "00:30:00",
+    "gpu": null
+  },
+  "authorization": {
+    "status": "NOT_APPROVED",
+    "user_decision": null,
+    "approved_protocol_sha256": null
+  },
+  "preparation_status": "IMPLEMENTED_LOCAL_CHECKS_PASS_NOT_GPU_VALIDATED",
+  "execution_commit": null
+}

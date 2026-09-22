@@ -15,6 +15,12 @@ from hpc.submit_release import absolute_path
 
 
 def submit(plan, state, execute=False):
+    if plan['mode'] in ('medical-overlap', 'medical-classifier'):
+        from hpc.medical_protocol import validate_config, CAPS
+        validate_config(plan['config'], plan['mode'], approved=execute)
+        expected=CAPS[plan['mode']]
+        if any(plan['resources'].get(k)!=v for k,v in expected.items()):
+            raise ValueError('Medical scheduler resources differ from the protocol ceiling')
     state=Path(state);state.mkdir(parents=True,exist_ok=True)
     key=plan['task_key']
     if not re.fullmatch('[A-Za-z0-9_-]+',key) or not re.fullmatch('[a-f0-9]{40}',plan['commit']):raise ValueError('Explicit task key and commit required')
@@ -23,7 +29,7 @@ def submit(plan, state, execute=False):
         if not re.fullmatch('[A-Za-z0-9_-]+',r[name]):raise ValueError('Unsafe resource option')
     if not re.fullmatch('[1-9][0-9]*[MG]',r['memory']) or not re.fullmatch('[0-9]{2}:[0-5][0-9]:[0-5][0-9]',r['time']) or type(r['cpus']) is not int or r['cpus']<1:raise ValueError('Invalid resources')
     if r.get('gpu') and not re.fullmatch('[A-Za-z0-9_]+:1',r['gpu']):raise ValueError('Require one explicit GPU type')
-    if plan['mode'] in ('inventory','publish','baseline-readiness','derm7pt-audit','dermamnist-release','rdm-access-check') and r.get('gpu'):raise ValueError('CPU preparation must not request GPU')
+    if plan['mode'] in ('inventory','publish','baseline-readiness','derm7pt-audit','dermamnist-release','rdm-access-check','medical-overlap') and r.get('gpu'):raise ValueError('CPU preparation must not request GPU')
     jobname='humcd-reference' if plan['mode']=='discover' else 'humcd-'+key
     log='reference' if plan['mode']=='discover' else 'workstream'
     lines=['#!/usr/bin/env bash','#SBATCH --job-name='+jobname,'#SBATCH --account=a_ai_collab','#SBATCH --partition='+r['partition'],'#SBATCH --qos='+r['qos'],'#SBATCH --nodes=1','#SBATCH --ntasks=1','#SBATCH --cpus-per-task='+str(r['cpus']),'#SBATCH --mem='+r['memory'],'#SBATCH --time='+r['time'],'#SBATCH --output='+root+'/logs/'+log+'-%j.out','#SBATCH --error='+root+'/logs/'+log+'-%j.err']
