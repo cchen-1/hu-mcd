@@ -15,6 +15,11 @@ from hpc.submit_release import absolute_path
 
 
 def submit(plan, state, execute=False):
+    if plan['mode']=='medical-external':
+        from hpc.medical_external import validate, CAPS as EXTERNAL_CAPS
+        validate(plan['config'],approved=execute)
+        if any(plan['resources'].get(k)!=v for k,v in EXTERNAL_CAPS.items()):
+            raise ValueError('External evaluation resources differ from approval')
     if plan['mode'] in ('medical-discovery-inputs','medical-discovery'):
         from hpc.medical_discovery import validate, CAPS as DISCOVERY_CAPS
         validate(plan['config'],approved=execute)
