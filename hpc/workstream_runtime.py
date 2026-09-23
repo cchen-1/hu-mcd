@@ -14,7 +14,7 @@ import warnings
 
 from utils.run_tracking import atomic_json, sha256, utc_now
 
-MODES={'medical-external':'hpc.medical_external','medical-discovery-inputs':'hpc.medical_discovery','medical-discovery':'hpc.medical_discovery',
+MODES={'baseline-stage':'hpc.baseline_multiclass','medical-external':'hpc.medical_external','medical-discovery-inputs':'hpc.medical_discovery','medical-discovery':'hpc.medical_discovery',
        'medical-overlap':'hpc.medical_overlap','medical-classifier':'hpc.medical_classifier',
        'rdm-access-check':'hpc.rdm_access_check','dermamnist-release':'hpc.dermamnist_release',
        'mask-sensitivity':'hpc.mask_sensitivity','derm7pt-audit':'hpc.derm7pt_audit',

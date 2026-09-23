@@ -80,8 +80,11 @@ def _identity(row):
 
 
 def verify_golden(config, licensed):
+    class_name=config.get('class_name', CLASS_NAME)
+    mapping=json.loads((ROOT/'imagenet1k_class_info.json').read_text())
+    synset=mapping[class_name]['wnid']
     dataset = _load_checked(config['dataset_manifest'], config['dataset_manifest_sha256'])
-    if (dataset['class_name'] != CLASS_NAME or dataset['synset'] != SYNSET
+    if (dataset['class_name'] != class_name or dataset['synset'] != synset
             or dataset['seed'] != 43 or not dataset.get('ready_for_reference')
             or dataset.get('validation_issues')):
         raise ValueError('Golden fixed input manifest is not ready or has wrong identity')
@@ -89,8 +92,8 @@ def verify_golden(config, licensed):
         raise ValueError('Golden and random pool licensed roots differ')
     roles = {}
     for split, count, role, relative in (
-        ('training', TARGET_COUNT, 'target400', CLASS_NAME),
-        ('validation', VALIDATION_COUNT, 'validation50', 'val_imgs/' + CLASS_NAME + '_val'),
+        ('training', TARGET_COUNT, 'target400', class_name),
+        ('validation', VALIDATION_COUNT, 'validation50', 'val_imgs/' + class_name + '_val'),
     ):
         rows = dataset[split]
         if len(rows) != count:
@@ -101,7 +104,7 @@ def verify_golden(config, licensed):
         verified = []
         for i, original in enumerate(rows):
             source, path = Path(original['source']), Path(original['input_path'])
-            origin_root = licensed / ('train' if split == 'training' else 'val') / SYNSET
+            origin_root = licensed / ('train' if split == 'training' else 'val') / synset
             if (not _within(source, origin_root)
                     or path != prepared / original['prepared_name']
                     or Path(original['prepared_name']).name != original['prepared_name']):
@@ -269,9 +272,9 @@ def run(config, output):
                   versions=dict(python=platform.python_version(), pillow=PILLOW_VERSION),
                   selection=dict(version=ORDER_VERSION, seed=43, rng='independent random.Random(43).shuffle(indices)',
                                  candidate_universe='all immediate regular-file targets in all 1000 n######## train directories; no extension filter; symlink targets must resolve within train',
-                                 label_policy='label-blind; Golden allowed', eligibility='successful RGB decode; no conversion',
+                                 label_policy='label-blind; target class allowed', eligibility='successful RGB decode; no conversion',
                                  duplicate_content_policy='retain different training IDs and report overlap',
-                                 validation_exclusion='all val path/filename identities; SHA256 exclusion against original and actual Golden validation50 only'))
+                                 validation_exclusion='all val path/filename identities; SHA256 exclusion against original and actual target-class validation50 only'))
     atomic_json(manifest_path, record)
     def progress(stage, **data):
         atomic_json(owned / 'progress.json', dict(status=record['status'], stage=stage,

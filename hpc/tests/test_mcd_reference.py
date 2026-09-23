@@ -151,7 +151,7 @@ class MCDReferenceTests(unittest.TestCase):
             np.savez_compressed(root/'classifier.npz',weight=np.ones((1000,2048),np.float32),bias=np.zeros(1000,np.float32))
             source={'dataset':{k:[{'input_path':'fixed.jpg'}] for k in ('training','validation')},'model_cfg':{}}
             with patch.object(m,'verified_stage',return_value=(root,{})),patch.object(m,'load_features',return_value=(maps,np.zeros((1,1000)))),patch.object(utils_mcd,'compute_sparse_repr_matrix',side_effect=ssc),patch.object(classes.ClusterSpaceClass,'_spectral_clustering',side_effect=lambda affinity,k,max_samples:np.arange(affinity.shape[0])%k),patch.object(ConceptExplainer,'compute_concept_subspace_bases',new=bases),patch.object(classes.ConceptClass,'_estimate_dim',return_value=1),patch.object(utils_mcd,'calc_completeness',side_effect=[.5,.6]),patch.object(m,'basis_gate',return_value=(None,{'rank':2048})),patch.object(m,'cached_spatial_replay',return_value={'synthetic':True}),patch.object(ConceptExplainer,'concept_quantification',return_value=(np.ones(5),None)):
-                result=m.fit({'feature_manifest_sha256':'a'*64},out,source,lambda **kw:None,lambda *args:None)
+                result=m.fit({'feature_manifest_sha256':'a'*64,'class_name':'golden_retriever'},out,source,lambda **kw:None,lambda *args:None)
             self.assertEqual(calls,[49,37])
             self.assertEqual(result['selected_k'],4)
             self.assertEqual([r['k'] for r in m.load(out/'search_trace.json')],[3,4])

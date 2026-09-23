@@ -45,6 +45,12 @@ PROTOCOL=dict(schema='ace-humcd-released-R-v1',name=NAME,arm='R',seed=43,
     prediction_cropping_mode=0,prediction_use_masks=True,prediction_masking_mode=1,
     modes=['sdc','ssc'],contributor_rule='count > .75 * 50')
 PROTOCOL_SHA256=digest(PROTOCOL)
+
+def protocol_for(class_name):
+    # Only identity text changes; every scientific setting remains Golden R.
+    if class_name == 'golden_retriever':return dict(PROTOCOL)
+    return dict(PROTOCOL,class_name=class_name,discovery_rule='frozen class400 prefix50')
+
 SCIENCE_FILES=('classes.py','concept_explainer.py','benchmark_methods.py','run_ace.py',
     'utils/utils_general.py','utils/utils_ace.py','input_masking/resnet.py','input_masking/sal_layers.py')
 GOLDEN_FILES=('summary.json','run_manifest.json','resolved_config.json','scientific/discovery.json')
@@ -101,20 +107,23 @@ def role_overlap(left,right):
 def verify_sources(config):
     """Scientific identity only; generic release/scheduler checks belong to parent."""
     from hpc.workstream_runtime import verify_inputs
+    if config.get('multiclass_reference'):
+        from hpc.baseline_multiclass import verify_reference
+        verify_reference(config, SCIENCE_FILES)
     root=Path(config['golden_run_dir'])
     saved=[load(checked_file(under(root,n),config['golden_files_sha256'][n])) for n in GOLDEN_FILES]
     summary,golden,old,discovery=saved
     launch=load(checked_file(Path(config['golden_launch_manifest']),config['golden_launch_sha256']))
-    if (summary['status']!='PASS' or str(summary['run_id'])!='28208840' or golden['git_dirty']
+    if not config.get('multiclass_reference') and (summary['status']!='PASS' or str(summary['run_id'])!='28208840' or golden['git_dirty']
         or launch['status']!='EXECUTION_COMPLETED' or summary['git_commit']!=golden['git_commit']
         or launch['actual_commit']!=golden['git_commit']
         or any(r['resolved_config_sha256']!=config['golden_files_sha256']['resolved_config.json'] for r in (golden,summary))):
         raise ValueError('Golden provenance mismatch')
     for key in ('class_name','model_name','source_dir','dataset_manifest_sha256','resnet_checkpoint_sha256','precision','batch_size','max_shortest_side'):
         if config[key]!=old[key]:raise ValueError('Changed Golden fixed setting: '+key)
-    if config['layer_name']!='global_pool' or config['class_name']!='golden_retriever' or config['batch_size']!=8:
+    if config['layer_name']!='global_pool' or (not config.get('multiclass_reference') and config['class_name']!='golden_retriever') or config['batch_size']!=8:
         raise ValueError('Only authorized Golden global_pool batch8 ACE-R is supported')
-    if config['ace_protocol_sha256']!=PROTOCOL_SHA256 or config['random_seeds']!={'sdc':43,'ssc':43}:
+    if config['ace_protocol_sha256']!=digest(protocol_for(config['class_name'])) or config['random_seeds']!={'sdc':43,'ssc':43}:
         raise ValueError('Unapproved ACE/Random protocol')
     dataset=load(checked_file(Path(config['dataset_manifest']),config['dataset_manifest_sha256']))
     for split,n in (('training',400),('validation',50)):
@@ -137,7 +146,7 @@ def verify_sources(config):
         if any(any(a[k]!=b[k] for k in ('source','sha256','input_path','input_sha256')) for a,b in zip(roles[role],dataset[split])):
             raise ValueError('Prepared Golden role identity mismatch')
     inputs=dict(discovery=roles['discovery50'],random=roles['random2000'],
-        prepared_manifest_sha256=config['ace_input_manifest_sha256'],protocol_sha256=PROTOCOL_SHA256,
+        prepared_manifest_sha256=config['ace_input_manifest_sha256'],protocol_sha256=digest(protocol_for(config['class_name'])),
         selection=prepared['selection'])
     for a,b in zip(inputs['discovery'],dataset['training'][:50]):
         if any(a[k]!=b[k] for k in ('source','sha256','input_sha256')):raise ValueError('Discovery is not fixed400 prefix50')
@@ -161,7 +170,7 @@ def verify_sources(config):
             expected=proof['installed_sha256']
         else:expected=golden['source_sha256'][name]
         science[name]=sha256(checked_file(ROOT/name,expected))
-    signature=dict(protocol_sha256=PROTOCOL_SHA256,ace_input_manifest_sha256=config['ace_input_manifest_sha256'],
+    signature=dict(protocol_sha256=digest(protocol_for(config['class_name'])),ace_input_manifest_sha256=config['ace_input_manifest_sha256'],
         dataset_sha256=config['dataset_manifest_sha256'],classifier_sha256=config['resnet_checkpoint_sha256'],
         precision=config['precision'],model_default_cfg=discovery['model_default_cfg'],science_sha256=science,
         helper_sha256={n:sha256(ROOT/n) for n in ('hpc/evaluate_reference.py','hpc/mcd_reference.py')})
@@ -311,19 +320,19 @@ def objects_from_rows(X,records,keep):
     return images,segments
 
 
-def candidate_records(explainer,records):
+def candidate_records(explainer,records,class_name='golden_retriever'):
     candidates=[];eligible={int(c.label) for c in explainer.concepts}
     bylabel={int(c.label):c for c in explainer.clustering.clusters}
     for label in range(25):
         cluster=bylabel.get(label)
         if cluster is None:
-            candidates.append(dict(id=f'ACE-R-golden_retriever-K{label:02d}',cluster_id=label,members=[],size=0,
+            candidates.append(dict(id=f'ACE-R-{class_name}-K{label:02d}',cluster_id=label,members=[],size=0,
                 coverage=0,structural_pass=False,filter_reasons=['empty/unobserved cluster label']));continue
         members=[s.ace_row for s in cluster.segments];images={s.org_img.filename for s in cluster.segments}
         size=len(members);coverage=len(images)/len(explainer.class_imgs);reasons=[]
         if size<50:reasons.append('size < 50')
         if coverage<.5:reasons.append('image coverage < .5')
-        candidates.append(dict(id=f'ACE-R-golden_retriever-K{label:02d}',cluster_id=label,members=members,
+        candidates.append(dict(id=f'ACE-R-{class_name}-K{label:02d}',cluster_id=label,members=members,
             member_ids=[records[i]['id'] for i in members],size=size,unique_images=len(images),coverage=coverage,
             structural_pass=label in eligible,filter_reasons=reasons,positive_rule='first50 source centroid-distance order',
             nominal_p_status='not yet computed' if label in eligible else 'not fitted: structural filter'))
@@ -436,7 +445,7 @@ def cav(config,out,source,mark,note):
     explainer=ConceptExplainer.__new__(ConceptExplainer);explainer.class_imgs=images
     with observe_kmeans(out,deferred):
         explainer.create_concepts(cluster_algo='kmeans',n_clusters=25,norm_acts=False,min_size=50,min_coverage=.5,max_samples=50)
-    candidates=candidate_records(explainer,records);write_json(out/'all_candidates.json',candidates)
+    candidates=candidate_records(explainer,records,config.get('class_name','golden_retriever'));write_json(out/'all_candidates.json',candidates)
     clusters=explainer.clustering.clusters
     np.savez_compressed(out/'clusters.npz',labels=explainer.clustering.labels,retained_raw_rows=np.flatnonzero(~zero),
         cluster_ids=np.asarray([c.label for c in clusters]),centroids=np.stack([c.centroid for c in clusters]))
@@ -488,7 +497,7 @@ def cav(config,out,source,mark,note):
         formal_rng_sha256=sha256(out/'formal_rng.json'),cav_fits=20*(len(explainer.concepts)+1))
 
 
-def gradient_cache(model,rows,out,mark):
+def gradient_cache(model,rows,out,mark,target=207):
     """Actual original backward hook and mean CE, batch8, no analytic replacement."""
     import torch
     import classes
@@ -498,13 +507,13 @@ def gradient_cache(model,rows,out,mark):
     for im in images:im.segments=[classes.SegmentClass(np.ones(im.img_numpy.shape[:2]),im)]
     data=classes.ConceptDatasetClass(images,model.default_cfg,0,False,None)
     loader=DataLoader(data,batch_size=8,shuffle=False,collate_fn=utils_general.custom_collate)
-    gradients,handle=utils_general.get_activation_hook(model.get_submodule('global_pool'),207)
+    gradients,handle=utils_general.get_activation_hook(model.get_submodule('global_pool'),target)
     pooled,pool_hook=utils_general.get_activation_hook(model.get_submodule('global_pool'),None)
     folder=out/'gradients';folder.mkdir();parts=[];cursor=0;groups=[]
     try:
         for batch,inputs in enumerate(loader):
             logits=model(inputs)
-            model.zero_grad();targets=torch.full((logits.size(0),),207,dtype=torch.long,device=utils_general.DEVICE)
+            model.zero_grad();targets=torch.full((logits.size(0),),target,dtype=torch.long,device=utils_general.DEVICE)
             loss=torch.nn.functional.cross_entropy(logits,targets);loss.backward()
             g=gradients.pop();h=pooled.pop();y=logits.detach().clone().cpu().numpy()
             if g.shape!=(len(y),2048) or not np.isfinite(g).all() or not np.isfinite(y).all():raise ValueError('Invalid CE gradients/logits')
@@ -572,7 +581,9 @@ def evaluation(config,out,source,mark,note):
     checked_file(Path(config['resnet_checkpoint']),config['resnet_checkpoint_sha256'])
     model=make_model(config,source);formal=load(cavroot/'formal_rng.json');restore_rng(formal)
     plan=load(checked_file(cavroot/'frozen_roles.json',cm['result']['frozen_roles_sha256']))
-    G=gradient_cache(model,plan['gradient_inputs'],out,mark)
+    from utils.utils_general import get_imagenet_class_index
+    target=get_imagenet_class_index(config['class_name'])
+    G=gradient_cache(model,plan['gradient_inputs'],out,mark,target)
     concepts,tests=score_candidates(cavroot,cm,G,out,note)
     candidates=load(cavroot/'all_candidates.json');testmap={r['cluster_id']:r for r in tests}
     for c in candidates:
@@ -618,7 +629,7 @@ def evaluation(config,out,source,mark,note):
             def checkpoint(values,ids):
                 values.tofile(partial);partial.flush();batchfile.write(json.dumps(ids)+'\n');batchfile.flush()
             logits,batches=predict_stream(model,trajectories(),8,lambda n,b:mark(mode=mode,predicted_states=n,batches=b),on_batch=checkpoint)
-        offsets=np.r_[0,np.cumsum(counts)];correct=logits.argmax(1)==207
+        offsets=np.r_[0,np.cumsum(counts)];correct=logits.argmax(1)==target
         grouped=[correct[a:b].tolist() for a,b in zip(offsets[:-1],offsets[1:])]
         avg,std=benchmark.calc_avg_and_std(grouped,50);pixels,pstd=benchmark.calc_avg_and_std(fractions,50)
         contributors=[sum(n>j for n in counts) for j in range(max(counts))];included=[j for j,n in enumerate(contributors) if n>37.5]
@@ -649,7 +660,7 @@ def run(config,output):
     if list(out.glob('ace_*')):raise FileExistsError('ACE output already used; no retry in place')
     preexisting={str(p.relative_to(out)) for p in out.rglob('*') if p.is_file()}
     state=dict(status='RUNNING',stage=config['stage'],name=NAME,job_id=os.environ['SLURM_JOB_ID'],
-        execution_commit=config['execution_commit'],implementation_sha256=sha256(Path(__file__)),protocol=PROTOCOL,
+        execution_commit=config['execution_commit'],implementation_sha256=sha256(Path(__file__)),protocol=protocol_for(config['class_name']),
         config_sha256=digest(config));anomalies=[];started=time.monotonic()
     write_json(out/'ace_config.json',config)
     def mark(**kw):write_json(out/'ace_progress.json',dict(stage=config['stage'],status=state['status'],elapsed=time.monotonic()-started,**kw))

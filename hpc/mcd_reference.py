@@ -58,6 +58,16 @@ def rng_state():
 def verify_common(config):
     """Pin the original 400/50 manifest/order; method-specific features are new."""
     from hpc.workstream_runtime import verify_inputs
+    if config.get('multiclass_reference'):
+        from hpc.baseline_multiclass import verify_reference
+        base = verify_reference(config, SCIENCE_FILES)
+        dataset = base['dataset']
+        signature = dict(protocol=PROTOCOL, dataset_sha256=config['dataset_manifest_sha256'],
+            input_hashes={s:[r['input_sha256'] for r in dataset[s]] for s in ('training','validation')},
+            classifier_sha256=config['resnet_checkpoint_sha256'], precision=config['precision'],
+            science_sha256=base['science'], model_default_cfg=base['discovery']['model_default_cfg'])
+        return dict(dataset=dataset, golden=base['manifest'], golden_versions=base['launch']['versions'],
+            signature=signature, signature_sha256=digest(signature), model_cfg=base['discovery']['model_default_cfg'])
     root = Path(config['golden_run_dir'])
     launch = load(checked_file(Path(config['golden_launch_manifest']), config['golden_launch_sha256']))
     for name in GOLDEN_FILES:
@@ -310,9 +320,9 @@ def fit(config,out,source,mark,note):
         feature_y=int(raw%49//7),feature_x=int(raw%7),input_path=source['dataset']['training'][raw//49]['input_path']) for i,raw in enumerate(spatial_ids)])
     with np.load(root/'classifier.npz',allow_pickle=False) as z:W,bias=z['weight'],z['bias']
     explainer=ConceptExplainer.__new__(ConceptExplainer)
-    explainer.class_imgs=images;explainer.target_class='golden_retriever';explainer.max_shortest_side=300
+    explainer.class_imgs=images;explainer.target_class=config['class_name'];explainer.max_shortest_side=300
     explainer.model=SimpleNamespace(default_cfg=source['model_cfg'],fc=SimpleNamespace(weight=torch.from_numpy(W),bias=torch.from_numpy(bias)))
-    target=utils_general.get_imagenet_class_index('golden_retriever')
+    target=utils_general.get_imagenet_class_index(config['class_name'])
     sscdir=out/'ssc';sscdir.mkdir();search=out/'search';search.mkdir()
     trace=[];calls=[]
     original_ssc=utils_mcd.compute_sparse_repr_matrix
@@ -443,12 +453,16 @@ def verify_random_reuse(config,source):
     spec=config.get('random_reuse')
     if not spec:return dict(status='NOT_REQUESTED',new_random_predictions=0)
     folder=Path(spec['directory'])
-    contract=load(checked_file(Path(spec['contract_path']),spec['contract_sha256']))
+    if 'contract' in spec:
+        contract=spec['contract']
+        if digest(contract)!=spec['contract_sha256']:raise ValueError('Inline Random contract hash mismatch')
+    else:
+        contract=load(checked_file(Path(spec['contract_path']),spec['contract_sha256']))
     expected=random_signature(config,source['model_cfg'],source['dataset']['validation'],source['signature']['science_sha256'])
     if contract['signature']!=expected:raise ValueError('Random reuse signature differs; no automatic recomputation')
     # Contract is an explicit, hash-bound provenance audit prepared by coordinator,
     # not an inferred trust in a filename or a convenient matching curve.
-    if contract.get('status')!='PASS' or str(contract.get('source_job'))!='28214892':
+    if contract.get('status')!='PASS' or str(contract.get('source_job'))!=str(spec.get('source_job','28214892')):
         raise ValueError('Random producer provenance not accepted')
     for rel,item in contract['files'].items():checked_file(under(folder,rel),item['sha256'],item['bytes'])
     needed={'evaluation_sources.json','evaluation_config.json','evaluation_curves.json'}
@@ -460,7 +474,7 @@ def verify_random_reuse(config,source):
             or src['precision']!=config['precision'] or cfg['batch_size']!=8 or cfg['random_seeds']!={'sdc':43,'ssc':43}):
         raise ValueError('Random contract conflicts with producer records')
     curves=load(folder/'evaluation_curves.json')
-    return dict(status='REUSED',source_job='28214892',contract_sha256=spec['contract_sha256'],
+    return dict(status='REUSED',source_job=str(contract['source_job']),contract_sha256=spec['contract_sha256'],
                 directory=str(folder),new_random_predictions=0,curves={f'rdm_{m}':curves[f'rdm_{m}'] for m in ('sdc','ssc')})
 
 
