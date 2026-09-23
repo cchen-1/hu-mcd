@@ -1,0 +1,94 @@
+{
+  "mode": "derm-fitting",
+  "protocol": {
+    "precision": {
+      "cudnn_allow_tf32": true,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": false,
+      "deterministic_algorithms": false,
+      "float32_matmul_precision": "highest",
+      "matmul_allow_tf32": false
+    },
+    "mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "std": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "protocol_id": "MED26-HAM-DERM-DISCOVERY-01/R101-fit-v1",
+    "training_images": 101,
+    "held_out_images": 0,
+    "target_label": 4,
+    "batch_size": 8,
+    "selected_epoch": 27,
+    "outlier_quantile": 1.0,
+    "min_cluster_size": 50,
+    "sampling_seed": 43,
+    "external_inference": false,
+    "classifier_training": false,
+    "automatic_retry": false,
+    "max_shortest_side": 300,
+    "extra_square_resize_before_sam": false,
+    "work_seconds_ceiling": 3420,
+    "output_bytes_ceiling": 8589934592,
+    "inputs": {
+      "classifier": {
+        "path": "/scratch/user/uqcche38/datasets/ham10000/isic2018-task3-20260924/models/28885816/best/model.pt",
+        "sha256": "bee957a2a13b894ea12a6f41cc9d5b38f206fc65b4a60fd1ebd81446099c0d37"
+      },
+      "classifier_identity": {
+        "path": "/scratch/user/uqcche38/datasets/ham10000/isic2018-task3-20260924/models/28885816/frozen_classifier.json",
+        "sha256": "32a0dac5e94af40d78a6e1063edd193ed4c2984a340a102c3b6ee1d89f969dee"
+      },
+      "fit_manifest": {
+        "path": "/scratch/user/uqcche38/datasets/ham10000/isic2018-task3-20260924/inputs/28883445/derm7pt_fit_manifest.json",
+        "sha256": "2d645d1cd189f510eb22b5cd4a58d476ce170fa1bdfc3f6fd2bf47bf124f5610"
+      },
+      "classifier_acceptance": {
+        "path": "/scratch/user/uqcche38/datasets/ham10000/isic2018-task3-20260924/raw/classifier-acceptance-28885816.json",
+        "sha256": "5ca1490c912b179a67a4849861ca27a8fbdcdbadc0a2dcdad8fdf1ca0ffd6a3b"
+      },
+      "sam": {
+        "path": "/scratch/user/uqcche38/hu-mcd/models/sam_vit_h_4b8939.pth",
+        "sha256": "a7bf3b02f3ebf1267aba913ff637d9a2d5c33d3173bb679e46d9f338c26f262e"
+      }
+    },
+    "discovery_algorithm": {
+      "sam_type": "vit_h",
+      "points_per_side": 32,
+      "min_mask_region_area": 256,
+      "cropping_mode": 0,
+      "masking_mode": -1,
+      "erosion_threshold": 0.25,
+      "layer": "global_pool",
+      "feature_dim": 2048,
+      "cluster_algo": "sparse_subspace_clustering",
+      "n_clusters": null,
+      "norm_acts": true,
+      "min_coverage": 0.0,
+      "max_samples": null,
+      "dimension_estimator": "ratio",
+      "zero_features": "released_exact_zero_exclusion_with_raw_evidence",
+      "display_seed": 4301
+    }
+  },
+  "protocol_sha256": "1710b86b1feee48fd941318e0283636cc3e1dfe55c2e0086958ce16c03e82e22",
+  "resources": {
+    "cpus": 8,
+    "memory": "32G",
+    "time": "01:00:00",
+    "gpu": "l40s:1"
+  },
+  "authorization": {
+    "status": "APPROVED",
+    "decision_id": "MED26-HAM-DERM-DISCOVERY-01",
+    "approved_protocol_sha256": "1710b86b1feee48fd941318e0283636cc3e1dfe55c2e0086958ce16c03e82e22",
+    "user_decision": "好 同意此次方案…训练基于HAM的resnet50，再用derm7pt来做concept discovery，把pipeline跑通，我们后面再补齐迁移评价；101例全部拟合没问题，前置工作做到位之后就可以继续准备bunya上提交相关job了；切记不在SAM之前额外统一成224方图，保留短边300保持比例，可以继续",
+    "resource_basis": "Bounded R101 all-fit execution: 1L40S,8CPU,32GiB,1hour,8GiB. No retry or expansion; prior470-image fit775s is a reference only."
+  },
+  "execution_commit": null
+}

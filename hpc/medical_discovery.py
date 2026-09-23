@@ -114,7 +114,7 @@ def prepare(config,out,budget):
     return dict(status='PASS_INPUT_IDENTITY_ONLY',selection_sha256=digest(selection),dataset_manifest_sha256=sha256(out/'dataset_manifest.json'),training=400,training_lesions=400,held_out=70,held_out_lesions=61)
 
 
-def discover(config,out,budget):
+def discover(config,out,budget,fit_context=None):
     import torch
     import timm
     from torch.utils.data import DataLoader
@@ -124,14 +124,24 @@ def discover(config,out,budget):
     from utils import utils_general,utils_mcd,scientific_records
     from hpc.medical_classifier import adapter_checks
     from hpc.workstream_runtime import event
-    p=config['protocol'];d0=Path(config['prepared_inputs']);source=json.loads((d0/'dataset_manifest.json').read_text())
-    receipt=json.loads((d0/'artifacts.json').read_text());launch=json.loads((d0/'launch_manifest.json').read_text())
-    if (receipt['status']!='PASS' or launch['status']!='PASS' or source['job_id']!=receipt['job_id'] or source['job_id']!=d0.name or source['commit']!=config['execution_commit'] or
-        receipt['commit']!=config['execution_commit'] or source['selection_sha256']!=p['selection_sha256'] or
-        sha256(d0/'dataset_manifest.json')!=receipt['files']['dataset_manifest.json']['sha256']):raise ValueError('D0 prerequisite not complete/matching')
-    atomic_json(out/'D0_binding.json',dict(job_id=source['job_id'],manifest_sha256=sha256(d0/'dataset_manifest.json'),manifest_path=str(d0/'dataset_manifest.json'),selection_sha256=p['selection_sha256']))
-    frozen=json.loads(Path(p['inputs']['classifier_identity']['path']).read_text())
-    if frozen['selected_epoch']!=10 or frozen['checkpoint_sha256']!=CHECKPOINT:raise ValueError('Frozen classifier identity differs')
+    p=config['protocol'];prefix='HUMCD-MEL'
+    if fit_context is None:
+        p=config['protocol'];d0=Path(config['prepared_inputs']);source=json.loads((d0/'dataset_manifest.json').read_text())
+        receipt=json.loads((d0/'artifacts.json').read_text());launch=json.loads((d0/'launch_manifest.json').read_text())
+        if (receipt['status']!='PASS' or launch['status']!='PASS' or source['job_id']!=receipt['job_id'] or source['job_id']!=d0.name or source['commit']!=config['execution_commit'] or
+            receipt['commit']!=config['execution_commit'] or source['selection_sha256']!=p['selection_sha256'] or
+            sha256(d0/'dataset_manifest.json')!=receipt['files']['dataset_manifest.json']['sha256']):raise ValueError('D0 prerequisite not complete/matching')
+        atomic_json(out/'D0_binding.json',dict(job_id=source['job_id'],manifest_sha256=sha256(d0/'dataset_manifest.json'),manifest_path=str(d0/'dataset_manifest.json'),selection_sha256=p['selection_sha256']))
+        frozen=json.loads(Path(p['inputs']['classifier_identity']['path']).read_text())
+        if frozen['selected_epoch']!=10 or frozen['checkpoint_sha256']!=CHECKPOINT:raise ValueError('Frozen classifier identity differs')
+    else:
+        source=fit_context;d0=Path(p['inputs']['fit_manifest']['path']).parent
+        prefix='HUMCD-DERM7PT-R101-MEL'
+        frozen=json.loads(Path(p['inputs']['classifier_identity']['path']).read_text())
+        if frozen['checkpoint_sha256']!=p['inputs']['classifier']['sha256'] or frozen['selected_epoch']!=p['selected_epoch']:
+            raise ValueError('Frozen HAM classifier identity differs')
+        atomic_json(out/'fit_input_binding.json',source)
+    checkpoint_hash=p['inputs']['classifier']['sha256']
     if timm.__version__!='0.6.13' or not torch.cuda.is_available():raise RuntimeError('Pinned model runtime and GPU required')
     import timm.models.resnet as ir
     root=Path(__file__).resolve().parents[1]
@@ -145,23 +155,29 @@ def discover(config,out,budget):
     model.load_state_dict(torch.load(p['inputs']['classifier']['path'],map_location='cpu'),strict=True);model.to('cuda:0').eval()
     model.default_cfg=dict(model.default_cfg,num_classes=7)
     if list(model.default_cfg['mean'])!=p['mean'] or list(model.default_cfg['std'])!=p['std']:raise ValueError('Classifier/discovery preprocessing mismatch')
-    atomic_json(out/'environment.json',dict(torch=torch.__version__,timm=timm.__version__,gpu=torch.cuda.get_device_name(),precision=p['precision'],classifier_sha256=CHECKPOINT,training=False))
+    atomic_json(out/'environment.json',dict(torch=torch.__version__,timm=timm.__version__,gpu=torch.cuda.get_device_name(),precision=p['precision'],classifier_sha256=checkpoint_hash,training=False))
     images={}
-    for role,count in [('training',400),('held_out',70)]:
+    for role,count in [('training',p['training_images'])]+([('held_out',p['held_out_images'])] if p['held_out_images'] else []):
         if len(source[role])!=count:raise ValueError('Incorrect fixed input count')
         images[role]=[]
         for row in source[role]:
             if sha256(row['input_path'])!=row['input_sha256']:raise ValueError('Prepared input changed')
             im=classes.ImageClass(row['input_path'],max_shortest_side=300)
-            if im.img_numpy.shape!=(224,224,3):raise ValueError('Native224 geometry changed')
+            expected_wh=(224,224) if fit_context is None else tuple(row['input_size_wh'])
+            if im.img_pil.size!=expected_wh:raise ValueError('Bound pre-SAM geometry changed')
             im.image_id=row['image_id'];images[role].append(im)
     # Test actual released ConceptDataset preprocessing against classifier input arithmetic,
     # on the first same batch used for GPU adapter checks; no SAM probe.
     eight=images['training'][:8]
-    for im in eight:im.segments=[classes.SegmentClass(np.ones((224,224),np.float32),im)]
+    for im in eight:im.segments=[classes.SegmentClass(np.ones(im.img_numpy.shape[:2],np.float32),im)]
     ds=classes.ConceptDatasetClass(eight,model.default_cfg,cropping_mode=0,use_masks=False)
     x=torch.stack([ds[i] for i in range(8)])
-    expected=torch.stack([(torch.from_numpy(np.array(im.img_pil).copy()).permute(2,0,1).float()/255-torch.tensor(p['mean'])[:,None,None])/torch.tensor(p['std'])[:,None,None] for im in eight])
+    if fit_context is None:
+        expected=torch.stack([(torch.from_numpy(np.array(im.img_pil).copy()).permute(2,0,1).float()/255-torch.tensor(p['mean'])[:,None,None])/torch.tensor(p['std'])[:,None,None] for im in eight])
+    else:
+        from hpc.ham_input_preparation import released_full_image_input
+        expected=torch.stack([released_full_image_input(row['source_path'],model.default_cfg)[0]
+                              for row in source['training'][:8]])
     if not torch.equal(x,expected):raise ValueError('Actual HU input tensors differ from frozen classifier preprocessing')
     adapter_checks(model,x.to('cuda:0'),out,source['training'][:8])
     adapter=json.loads((out/'adapter_checks.json').read_text());adapter['selection']='First8 fixed discovery training rows, not classifier validation; same batch';adapter['input_preprocessing_exact_equal']=True;atomic_json(out/'adapter_checks.json',adapter)
@@ -188,7 +204,7 @@ def discover(config,out,budget):
         observed=ObservedGenerator()
         for idx,im in enumerate(ims):
             observed.image_id=im.image_id;im.load_segments(str(folder),observed)
-            for j,s in enumerate(im.segments):s.stable_id=f'HUMCD-MEL-{im.image_id}-S{j:04d}'
+            for j,s in enumerate(im.segments):s.stable_id=f'{prefix}-{im.image_id}-S{j:04d}'
             if not im.segments:event(out,role,'MED26-D-EMPTY_IMAGE',dict(image_id=im.image_id),'No retained segmentation region','Retain image; do not replace',status='RECORDED')
             budget(role+'_segmentation',completed=idx+1,total=len(ims))
         del generator,observed;gc.collect();torch.cuda.empty_cache();times[role+'_segmentation']=time.monotonic()-stage;stage=time.monotonic()
@@ -218,7 +234,7 @@ def discover(config,out,budget):
         raw_records[role]=mapping
         # Full-image features/predictions, with the same tensors as the frozen classifier.
         saved=[im.segments for im in ims]
-        for im in ims:im.segments=[classes.SegmentClass(np.ones((224,224),np.float32),im)]
+        for im in ims:im.segments=[classes.SegmentClass(np.ones(im.img_numpy.shape[:2],np.float32),im)]
         full=classes.ConceptDatasetClass(ims,model.default_cfg,0,False)
         fa,fl=utils_general.compute_activations(model,'global_pool',DataLoader(full,batch_size=8,shuffle=False,collate_fn=utils_general.custom_collate))
         for im,ss in zip(ims,saved):im.segments=ss
@@ -234,7 +250,7 @@ def discover(config,out,budget):
         np.savez_compressed(out/'initial_clusters.npz',labels=exp.clustering.labels,outlier_mask=exp.clustering.outlier_mask,segment_id=np.array([s.stable_id for s in segs]),row_l1=np.asarray(abs(sparse).sum(axis=1)).ravel())
         concept_index=[]
         for i,c in enumerate(exp.concepts):
-            concept_index.append(dict(concept_id=f'HUMCD-MEL-C{i+1:03d}',basis_index=i,cluster_id=int(c.label),initial_members=len(c.segments),initial_sorted_segments=[s.stable_id for s in c.segments],pca_fitting_segments=[s.stable_id for s in c.get_segments(mode='diverse',num=None)]))
+            concept_index.append(dict(concept_id=f'{prefix}-C{i+1:03d}',basis_index=i,cluster_id=int(c.label),initial_members=len(c.segments),initial_sorted_segments=[s.stable_id for s in c.segments],pca_fitting_segments=[s.stable_id for s in c.get_segments(mode='diverse',num=None)]))
         atomic_json(out/'cluster_filters.json',[dict(cluster_id=int(c.label),size=len(c.segments),retained=len(c.segments)>=50,filter_reason=None if len(c.segments)>=50 else 'size<50') for c in exp.clustering.clusters])
         atomic_json(out/'concept_index.json',concept_index);times['ssc']=time.monotonic()-stage;budget('D1_SSC_COMPLETE',initial_clusters=len(exp.clustering.clusters),learned_concepts=len(exp.concepts))
         if not exp.concepts:raise ValueError('No concept survived unchanged min_size50; evidence retained, no retune')
@@ -249,7 +265,7 @@ def discover(config,out,budget):
             acts=np.stack([s.model_act for s in segs]);sizes=[len(im.segments) for im in ims]
             similarities=exp.concept_activations(acts,sizes,norm_batch=False,n_jobs=1)
             scientific_records.save_split(exp,ims,similarities,out,role,4)
-            chosen=similarities.argmax(1);mapping=[dict(segment_id=s.stable_id,image_id=s.org_img.image_id,retained_row=i,assignment=int(chosen[i]),concept_id=concept_index[int(chosen[i])]['concept_id'] if chosen[i]<len(concept_index) else 'HUMCD-MEL-COMPLEMENT') for i,s in enumerate(segs)]
+            chosen=similarities.argmax(1);mapping=[dict(segment_id=s.stable_id,image_id=s.org_img.image_id,retained_row=i,assignment=int(chosen[i]),concept_id=concept_index[int(chosen[i])]['concept_id'] if chosen[i]<len(concept_index) else prefix+'-COMPLEMENT') for i,s in enumerate(segs)]
             atomic_json(out/(role+'_assignments.json'),mapping)
             fa,fl=full_records[role];checks,samples=scientific_records.numerical_checks(fa,fl[:,4],weight,model.fc.bias.detach().cpu().numpy()[4],exp.concept_bases+[exp.compl_basis])
             atomic_json(out/(role+'_full_reconstruction.json'),checks);np.savez_compressed(out/(role+'_full_reconstruction.npz'),**samples)
@@ -259,10 +275,12 @@ def discover(config,out,budget):
             for ci in range(len(concept_index)+1):
                 members=np.flatnonzero(chosen==ci)
                 random_members=rng.choice(members,size=min(10,len(members)),replace=False) if len(members) else []
-                examples.append(dict(concept_id=concept_index[ci]['concept_id'] if ci<len(concept_index) else 'HUMCD-MEL-COMPLEMENT',top_prototypes=[ims[ii].segments[jj].stable_id for ii,jj in top_by_concept[ci]],random_final_members=[segs[int(i)].stable_id for i in random_members],top_rule='Released get_top_concept_segms: assigned members, descending similarity, at most one region per image, up to10 images',random_rule='Independent RandomState4301, concept-index order, no replacement, at most10 assigned members'))
+                examples.append(dict(concept_id=concept_index[ci]['concept_id'] if ci<len(concept_index) else prefix+'-COMPLEMENT',top_prototypes=[ims[ii].segments[jj].stable_id for ii,jj in top_by_concept[ci]],random_final_members=[segs[int(i)].stable_id for i in random_members],top_rule='Released get_top_concept_segms: assigned members, descending similarity, at most one region per image, up to10 images',random_rule='Independent RandomState4301, concept-index order, no replacement, at most10 assigned members'))
             atomic_json(out/(role+'_example_index.json'),examples);budget(role+'_assignments_complete',images=len(ims),retained_regions=len(segs))
-        assign('training');process('held_out');assign('held_out')
+        assign('training')
+        if p['held_out_images']:
+            process('held_out');assign('held_out')
     completeness=float(utils_mcd.calc_completeness(weight,exp.concept_bases))
     if not np.isfinite(completeness):raise ValueError('Nonfinite completeness')
-    budget('D1_COMPLETE_PENDING_ACCEPTANCE',training=400,held_out=70,concepts=len(concept_index))
-    return dict(status='COMPLETED_PENDING_ACCEPTANCE',training=400,held_out=70,training_lesions=400,held_out_lesions=61,initial_clusters=len(exp.clustering.clusters),concepts=len(concept_index),completeness=completeness,concept_scores=scores.tolist(),outlier_quantile=1.0,outliers=int(exp.clustering.outlier_mask.sum()),stage_seconds=times,elapsed_seconds=time.monotonic()-start,peak_gpu_allocated_bytes=torch.cuda.max_memory_allocated(),peak_gpu_reserved_bytes=torch.cuda.max_memory_reserved(),classifier_sha256=CHECKPOINT,external_inference=False,clinical_utility_certified=False)
+    budget('D1_COMPLETE_PENDING_ACCEPTANCE',training=p['training_images'],held_out=p['held_out_images'],concepts=len(concept_index))
+    return dict(status='COMPLETED_PENDING_ACCEPTANCE',training=p['training_images'],held_out=p['held_out_images'],training_lesions=400 if fit_context is None else None,held_out_lesions=61 if fit_context is None else None,initial_clusters=len(exp.clustering.clusters),concepts=len(concept_index),completeness=completeness,concept_scores=scores.tolist(),outlier_quantile=1.0,outliers=int(exp.clustering.outlier_mask.sum()),stage_seconds=times,elapsed_seconds=time.monotonic()-start,peak_gpu_allocated_bytes=torch.cuda.max_memory_allocated(),peak_gpu_reserved_bytes=torch.cuda.max_memory_reserved(),classifier_sha256=checkpoint_hash,external_inference=False,clinical_utility_certified=False)
