@@ -47,3 +47,20 @@ class FinalMaskInterventionDataset:
         changed = intervene(mask.detach().cpu().numpy()[0], self.operation, self.radius)
         result = torch.as_tensor(changed, dtype=mask.dtype, device=mask.device).unsqueeze(0)
         return rgb, result, mode
+
+
+class FixedSlotDataset:
+    """Execution-only filler: original input in an empty intervention's slot.
+
+    The caller MUST discard filler outputs and retain empty scientific rows as
+    missing/invalid. No added sample, moved slot, or zero-mask inference.
+    """
+    def __init__(self, original, changed, empty):
+        if len(original)!=len(changed) or np.asarray(empty).shape!=(len(original),):
+            raise ValueError('Fixed-slot input length mismatch')
+        self.original,self.changed,self.empty=original,changed,np.asarray(empty,dtype=bool)
+
+    def __len__(self):return len(self.original)
+
+    def __getitem__(self,index):
+        return self.original[index] if self.empty[index] else self.changed[index]

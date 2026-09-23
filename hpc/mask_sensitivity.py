@@ -13,7 +13,7 @@ import time
 
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve, norm
-from hpc.final_mask_intervention import FinalMaskInterventionDataset
+from hpc.final_mask_intervention import FinalMaskInterventionDataset, FixedSlotDataset
 from utils.run_tracking import atomic_json, sha256, utc_now
 
 CONDITIONS = [('identity', 0), ('erosion', 1), ('erosion', 2), ('dilation', 1), ('dilation', 2)]
@@ -96,6 +96,31 @@ def run(config, out):
         raise ValueError('Unapproved or changed sensitivity conditions')
     shutil.copy2(payload_file, out/'frozen_protocol.json')
     source = payload['classes'][config['class_name']]
+    completion=config.get('completion')
+    previous=None
+    if completion:
+        allowed={'airliner':'28731217','hummingbird':'28731220','container_ship':'28731223','beach_wagon':'28731228'}
+        if completion['policy']!='fixed_original_slots_discard_fillers' or completion['previous_job']!=allowed.get(config['class_name']):
+            raise ValueError('Unapproved completion scope')
+        expected_batch={'airliner':0,'hummingbird':16,'container_ship':30,'beach_wagon':3}
+        if completion['failed_batch']!=expected_batch[config['class_name']]:raise ValueError('Known failing batch differs')
+        previous=Path('/scratch/user/uqcche38/hu-mcd/outputs/workstreams')/completion['previous_job']
+        receipt=json.loads(checked(previous/'artifacts.json',completion['artifacts_sha256']).read_text())
+        if receipt['status']!='FAILED' or receipt['commit']!='40418edfa4e4ac81eda02d954fe59de52a0f14f0':
+            raise ValueError('Unexpected prior run identity')
+        def prior(name):
+            return checked(previous/name,receipt['files'][name]['sha256'])
+        prior_config=json.loads(prior('actual_config.json').read_text())
+        if prior_config!={k:config[k] for k in ['class_name','payload','payload_sha256']}:
+            raise ValueError('Prior scientific config mismatch')
+        if sha256(prior('frozen_protocol.json'))!=config['payload_sha256']:
+            raise ValueError('Prior frozen protocol mismatch')
+        completed=json.loads(prior('condition_counts.json').read_text())
+        if [r['condition'] for r in completed]!=['identity0','erosion1'] or json.loads(prior('identity_gate.json').read_text())['status']!='PASS':
+            raise ValueError('Expected accepted identity/erosion1 prerequisite')
+        for name in ['identity_gate.json','identity0_masks.npz','identity0_science.npz','erosion1_masks.npz','erosion1_science.npz']:
+            shutil.copy2(prior(name),out/name)
+        atomic_json(out/'reuse_provenance.json',dict(previous_job=completion['previous_job'],previous_manifest_sha256=completion['artifacts_sha256'],reused_conditions=['identity0','erosion1'],policy=completion['policy'],old_failure_preserved=True))
     ledger = source['regions']; n = len(ledger)
     def mark(stage, **details):
         atomic_json(out/'sensitivity_progress.json', dict(stage=stage, class_name=config['class_name'],
@@ -124,6 +149,8 @@ def run(config, out):
     model = timm.create_model('resnet50', pretrained=False)
     model.load_state_dict(torch.load(old['resnet_checkpoint'], map_location='cpu'), strict=True)
     model.eval().to('cuda:0')
+    if completion and any(m.training or (isinstance(m,torch.nn.modules.batchnorm._BatchNorm) and not m.track_running_stats) for m in model.modules()):
+        raise ValueError('Fixed-slot execution requires eval mode and fixed BatchNorm statistics')
     if json.loads(json.dumps(model.default_cfg)) != dc['model_default_cfg']:
         raise ValueError('Model configuration changed')
     atomic_json(out/'model_identity.json', dict(classifier_sha256=old['resnet_checkpoint_sha256'],
@@ -179,9 +206,19 @@ def run(config, out):
         if f.shape!=(len(ids),2048) or logits.shape!=(len(ids),1000) or not np.isfinite(f).all() or not np.isfinite(logits).all():
             raise ValueError('Nonfinite/unexpected CNN output')
         return f,logits
-    controls=[];summary=[]
+    controls=[];summary=completed.copy() if completion else [];fixed_batches=[];checked_batches=set()
     try:
+        if completion:
+            # Exact historical failing batch, unchanged inputs in all original slots.
+            bi=completion['failed_batch'];ids=batches[bi]
+            f,l=forward(original,ids)
+            np.savez_compressed(out/'fixed_slot_entry_control.npz',rows=ids,features=f,logits=l)
+            control=identity_check(f,raw[ids],scorer,old_scores[ids],old_assign[ids])
+            atomic_json(out/'fixed_slot_entry_gate.json',dict(batch=bi,**control));checked_batches.add(bi)
+            atomic_json(out/'condition_counts.json',summary)
+            event(out,'completion','ROB26-007-fixed-slots',completion,'Original inputs fill empty slots only to retain batch geometry; filler predictions are discarded','No threshold/precision/sample change; exact-zero and empty scientific rows remain invalid',status='RECORDED')
         for operation,radius in CONDITIONS:
+            if completion and (operation,radius) in [('identity',0),('erosion',1)]:continue
             name=operation+str(radius);mark(name)
             ds=FinalMaskInterventionDataset(original,operation,radius)
             masks=np.stack([ds[i][1].numpy()[0].astype(bool) for i in range(n)])
@@ -190,8 +227,23 @@ def run(config, out):
                 raise ValueError('Geometry differs from approved inventory')
             np.savez_compressed(out/(name+'_masks.npz'),packed=np.packbits(masks,axis=2),shape=np.array(masks.shape))
             features=np.full((n,2048),np.nan,dtype=np.float32);logits=np.full((n,1000),np.nan,dtype=np.float32)
+            execution=FixedSlotDataset(original,ds,empty) if completion else ds
             for bi,ids in enumerate(batches):
                 kept=[i for i in ids if not empty[i]]
+                if completion:
+                    if len(kept)!=len(ids):
+                        if bi not in checked_batches:
+                            f,l=forward(original,ids)
+                            np.savez_compressed(out/(name+'_batch'+str(bi)+'_fixed_unchanged.npz'),rows=ids,features=f,logits=l)
+                            gate=identity_check(f,raw[ids],scorer,old_scores[ids],old_assign[ids]);checked_batches.add(bi)
+                            controls.append(dict(condition=name,batch=bi,rows=ids,check=gate));atomic_json(out/'fixed_batch_controls.json',controls)
+                        fixed_batches.append(dict(condition=name,batch=bi,original_rows=ids,active_rows=kept,filler_rows=[i for i in ids if empty[i]],filler='original input in same slot; outputs discarded'))
+                        atomic_json(out/'fixed_slot_batches.json',fixed_batches)
+                    if kept:
+                        f,l=forward(execution,ids);positions=[j for j,i in enumerate(ids) if not empty[i]]
+                        features[kept],logits[kept]=f[positions],l[positions]
+                    if bi%20==0:mark(name,completed_batches=bi+1,total_batches=len(batches))
+                    continue
                 if len(kept)!=len(ids) and kept:
                     f,l=forward(original,kept)
                     np.savez_compressed(out/(name+'_batch'+str(bi)+'_unchanged.npz'),rows=kept,features=f,logits=l)
