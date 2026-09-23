@@ -2,6 +2,28 @@
 
 Recorded 2026-09-24 Australia/Brisbane. Stable decision ID: MED26-HAM-DERM-DISCOVERY-01.
 
+## 2026-09-24 当前验收与正式训练 / Current acceptance and classifier execution
+
+**28883445 ACCEPTED_INPUTS_MODEL_NOT_RUN**: COMPLETED0:0,158s,MaxRSS2307524K. Local verification covers110indexed artifacts (all except1.5GBNPZ),101RGBlosslesspre-SAMimages and unchanged fixedR101identities,10,015classifiermanifest rows and24exacttensorchecks. Large classifier cache remains on scratch and is SHA256-bound before model loading. Evidence: `artifacts/bunya/ham-derm-discovery-20260924/inputs-acceptance.json`.
+
+SAM geometry:98images450×300,one each452×300/433×300/446×300. None are224square. The classifier-only cache has10,015pixel differences from the former direct224cache because the now-approved path first applies released short-side300loading; this is an expected interpolation difference, not an identity error. Source JPEGs, corrected split identities and labels are unchanged.
+
+Next executable classifier config: `configs/medical/ham-classifier.approved.json`; plain CE,50epochs/batch64/trainingseed43;8215/573/1227 source split;6450updates/410750training image visits; strict validation macroOVRAUC selection then one frozen test evaluation and same-batch8adapter checks. FP32/noAMP,cuDNN TF32true/matmulTF32false retained. Resource cap1L40S/4CPU/16GiB/1h/5GiB;worker ceiling3420s. Prior782s is a reference measurement, not a promise of runtime. No automatic extension/retry. This job trains only the HAM classifier; Derm7pt fitting waits for its checkpoint acceptance, with101fit/0held-out cases. No discovery sampling seed is consumed by classifier training.
+
+The existing trainer is reused without changes. The new protocol has a separately gated1-hour cap; historical classifier configs retain4-hourcaps. New wrapper persists actual config/version,input hashes,progress,warnings,failure trace and artifact hashes.13local software tests PASS; no SAMprobe or model test run was added. The authenticated SSH master remains valid and the queue was empty before submission preparation.
+
+Historical sections below retain their original status timestamps; they do not override this current acceptance.
+
+## 2026-09-24 当前输入准备作业 / Current input preparation
+
+**28883445 SUBMITTED**,2CPU/8GiB/20min/4GiBoutput/0GPU. Source commit **1131bd71f43c2dc202edc938bc6f3c2674c2f097** pushed. Complete source archive, actual worker bytes and plan SHA256 verified inside Slurm before execution. Data audit28883403 locallyACCEPTED; fixedR101all101approved. No expired afterok dependency, retries or model submissions.
+
+The input plan enforces `sam_input_policy={short_side_cap:300,preserve_aspect_ratio:true,extra_square_resize:false,use_classifier_cache:false}`. Derm7ptSAMinputs use the released loader only; classifier-only224cache has an explicit forbidden-as-SAM role record. ExpectedDermsizes98×450×300,1×452×300,1×433×300,1×446×300. All原图保留，禁止SAM前额外方形缩放。源码中的224只用于分类器缓存，不是SAM输入。
+
+Wait for user completion notice before collecting this batch. Required receipts: status/progress, actualplan, environment, warnings, artifacts index, classifier manifest,24no-modeltensorchecks, R101fitmanifest and101losslessinputs. LargeclassifierNPZ remains a pinned scratch cache; do not pretend it was locally collected when only its remote hash was collected. Then bind accepted hashes to the pending model launchers. No SAMprobe, predictions, training or concepts were executed by this CPU preparation.
+
+Local evidence: `artifacts/bunya/ham-derm-discovery-20260924/{inputs-plan.json,inputs-release.json,inputs.submission.json,input-preparation-tests.log,data-acceptance.json}`. Six synthetic tests PASS. Legacy np.bool8 warning persists without observed tensor effect; writableMPLCONFIGDIR resolves prior default-cache fallback for the new job.
+
 ## 2026-09-24 geometry clarification and accepted original data / 几何冻结与原图验收
 
 User explicitly confirmed: **不在SAM之前额外统一成224方图**; preserve released short-side300/aspect-ratio loading and released input/discovery flow. This resolves the temporary pause on new submissions. There is no new SAM geometry choice pending.

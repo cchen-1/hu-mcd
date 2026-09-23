@@ -18,6 +18,8 @@ CAPS = {
     'medical-overlap': dict(cpus=4, memory='8G', time='00:30:00', gpu=None),
     'medical-classifier': dict(cpus=4, memory='16G', time='04:00:00', gpu='l40s:1'),
 }
+HAM_PROTOCOL_ID = 'MED26-HAM-CLASSIFIER-v1'
+HAM_CAPS = dict(cpus=4, memory='16G', time='01:00:00', gpu='l40s:1')
 
 
 def digest(value):
@@ -56,8 +58,14 @@ def validate_config(config, mode, approved=False):
     p = config['protocol']
     if digest(p) != config['protocol_sha256']:
         raise ValueError('Protocol digest mismatch')
-    if config['resources'] != CAPS[mode]:
+    ham = mode == 'medical-classifier' and p.get('protocol_id') == HAM_PROTOCOL_ID
+    if config['resources'] != (HAM_CAPS if ham else CAPS[mode]):
         raise ValueError('Resource change needs a new proposal/approval')
+    if ham:
+        if (p.get('input_geometry') != dict(short_side_cap=300, preserve_aspect_ratio=True,
+                extra_square_resize_before_sam=False, classifier_cache_allowed_as_sam=False)
+                or p['work_seconds_ceiling'] > 3420):
+            raise ValueError('HAM geometry or one-hour processing budget differs from frozen plan')
     if approved:
         a = config['authorization']
         if (a.get('status') != 'APPROVED' or not a.get('user_decision') or
