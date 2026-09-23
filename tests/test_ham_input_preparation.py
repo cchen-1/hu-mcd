@@ -8,12 +8,29 @@ import torch
 from PIL import Image
 from torchvision import transforms
 
-from hpc.ham_input_preparation import released_full_image_input
+from hpc.ham_input_preparation import (released_full_image_input, released_classifier_pixels,
+                                        save_released_presam_input)
 
 CFG = dict(input_size=(3,224,224), mean=(.485,.456,.406), std=(.229,.224,.225))
 
 
 class RawHamInputTests(unittest.TestCase):
+    def test_presam_preserves_aspect_and_never_uses_classifier_square(self):
+        rng=np.random.RandomState(8)
+        with tempfile.TemporaryDirectory() as tmp:
+            for w,h,expected in [(600,450,(400,300)),(768,512,(450,300)),(180,240,(180,240))]:
+                source=Path(tmp)/f'source-{w}.png';target=Path(tmp)/f'input-{w}.png'
+                image=Image.fromarray(rng.randint(0,256,(h,w,3),dtype=np.uint8));image.save(source)
+                original_bytes=source.read_bytes()
+                record=save_released_presam_input(source,target)
+                self.assertEqual(record['input_size_wh'],list(expected))
+                self.assertFalse(record['extra_square_resize_before_sam'])
+                reference=image.resize(expected,Image.Resampling.LANCZOS) if min(w,h)>300 else image
+                with Image.open(target) as saved:
+                    self.assertNotEqual(saved.size,(224,224))
+                    np.testing.assert_array_equal(np.asarray(saved),np.asarray(reference))
+                self.assertEqual(source.read_bytes(),original_bytes)
+
     def test_large_and_small_geometry_and_reference_tensor(self):
         # Explicit reference pins the intended released two-resize semantics.
         cases = [((600,450),(400,300)), ((450,600),(300,400)),
@@ -26,6 +43,13 @@ class RawHamInputTests(unittest.TestCase):
                 Image.fromarray(pixels).save(path)
                 before = path.read_bytes()
                 actual, identity = released_full_image_input(path, CFG)
+                cached, cached_identity = released_classifier_pixels(path, CFG)
+                self.assertEqual(cached_identity, identity)
+                self.assertEqual(cached.dtype, np.uint8)
+                trainer_tensor = torch.from_numpy(cached.copy()).permute(2,0,1).float()/255
+                trainer_tensor = ((trainer_tensor-torch.tensor(CFG['mean'])[:,None,None]) /
+                                  torch.tensor(CFG['std'])[:,None,None])
+                self.assertTrue(torch.equal(actual, trainer_tensor))
                 self.assertEqual(identity['pre_sam_size_wh'], list(expected_size))
                 reference = Image.fromarray(pixels)
                 if min(w,h)>300:

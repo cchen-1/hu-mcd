@@ -2,6 +2,24 @@
 
 Recorded 2026-09-24 Australia/Brisbane. Stable decision ID: MED26-HAM-DERM-DISCOVERY-01.
 
+## 2026-09-24 geometry clarification and accepted original data / 几何冻结与原图验收
+
+User explicitly confirmed: **不在SAM之前额外统一成224方图**; preserve released short-side300/aspect-ratio loading and released input/discovery flow. This resolves the temporary pause on new submissions. There is no new SAM geometry choice pending.
+
+- Slurm28883403COMPLETED0:0/86seconds,MaxRSS89488K; local receipt accepts10,015raw600×450RGBimages, all source IDs/labels/lesionIDs and8215/573/1227split members, and10,015/10,015direct-bicubic224pixel matches. No original overwritten. Proof: `artifacts/bunya/ham-derm-discovery-20260924/data-acceptance.json`.
+- Next CPU preparation materializes two explicitly distinct roles: (1) classifier-only224cache derived through released short-side300 then classifier resizing, never fed toSAM; (2) Derm7ptR101lossless pre-SAM inputs from released ImageClass only. R101expected sizes:98×450×300,1×452×300,1×433×300,1×446×300. No224pre-SAMwarp, crop, padding, alternateSAM, new model or fitting.
+- Six local synthetic tests pass, including non-square pre-SAM geometry/lossless pixels and classifier-cache tensor equality with the released dataset. Future remote check first8rows per source split checks input arithmetic only, not predictions or anotherSAMprobe.
+- CPU preparation cap2CPU/8GiB/20min/4GiBoutput/0GPU. After submission, await user completion notice to collect the new input-manifest hashes; then finalize bound classifier and discovery launchers. Failure is not automatically retried. Model-stage drafts are not submitted experiments.
+
+## 2026-09-24 当前提交状态 / Current submitted batch
+
+- Official ISIC HAM10000 images, labels and lesion groupings downloaded successfully to `C:\Users\uqcche38\Downloads\HAM10000_original_ISIC2018_20260924`; three source files total2,772,262,421bytes. URLs/headers/SHA256 receipts retained. Original image ZIP SHA256 `4151b6de5e31eb21586732d2dc0df047737501d5f5333cb52b071ad704364cc0`.
+- Local ZIP-directory/CSV checks:10,015unique image IDs exactly match accepted corrected identities;0diagnosis differences;0lesion-ID differences. This is not a full decode/pixel audit. Multipart S3ETag is NOT treated as whole-file MD5.
+- SCP completed successfully to `/scratch/user/uqcche38/datasets/ham10000/isic2018-task3-20260924/raw/`. No source overwritten or removed.
+- Data audit **28883403 SUBMITTED**,2CPU/8GiB/20min/0GPU. Code **7547f3decad201530eeb13e1fb8b8d0d5b510779** pushed to fork reproduction. Worker actual bytes match committed source; worker+plan SHA256 checked within Slurm before Python execution. No stale schedulerdependency on completed directory job; successful directory receipt retained.
+- Do not wait/poll for batch completion. User completion notice triggers collection, audit acceptance and subsequent model-stage preparation. No classifier training, SAM or concept fitting submitted. Model-stage draft has dependencies and proposed ceilings, not completed executable launchers: `artifacts/bunya/ham-derm-discovery-20260924/model-stage-draft.json`.
+- Evidence: `artifacts/bunya/ham-derm-discovery-20260924/{download_manifest.json,local-header-check.json,local-lesion-id-differences.json,transfer.json,audit-plan.json,audit.submission.json,committed-file-check.json}`.
+
 ## Latest approval / 最新批准 — 2026-09-24
 
 User: “数据你下载一份到download放到一个单独的文件夹内然后scp到bunya scratch里的合理位置 因为之后要频繁读写的 另外101例全部拟合没问题 前置工作做到位之后就可以继续准备bunya上提交相关job了”.
