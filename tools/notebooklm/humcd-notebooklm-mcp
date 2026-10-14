@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+export NOTEBOOKLM_MCP_CLI_PATH=/home/chen/.local/share/hu-mcd-notebooklm/state
+export NLM_PROFILE=humcd-pilot
+export NLM_BROWSER_PATH=/home/chen/.local/bin/humcd-nlm-chrome
+export NOTEBOOKLM_DISABLED_GROUPS=notebooks_read,notebooks_manage,sources_read,sources_manage,chat,query_multi,organization,automation,notes,auth,server,sharing,research,studio
+export NOTEBOOKLM_ENABLED_TOOLS=notebook_list,notebook_get,source_get_content,notebook_query,notebook_query_start,notebook_query_status
+export NOTEBOOKLM_RATE_LIMIT_MAX_RETRIES=0
+export NOTEBOOKLM_QUERY_TIMEOUT=120
+exec /home/chen/.local/share/hu-mcd-notebooklm/bin/notebooklm-mcp --transport stdio

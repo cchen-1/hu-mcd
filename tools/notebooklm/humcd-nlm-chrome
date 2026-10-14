@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export LD_LIBRARY_PATH=/home/chen/.local/share/hu-mcd-notebooklm/browser-libs/usr/lib/x86_64-linux-gnu${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+exec /home/chen/.local/share/hu-mcd-notebooklm/chrome-linux64/chrome "$@"

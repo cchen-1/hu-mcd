@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+export NOTEBOOKLM_MCP_CLI_PATH=/home/chen/.local/share/hu-mcd-notebooklm/state
+export NLM_PROFILE=humcd-pilot
+export NLM_BROWSER_PATH=/home/chen/.local/bin/humcd-nlm-chrome
+exec /home/chen/.local/share/hu-mcd-notebooklm/bin/nlm "$@"
