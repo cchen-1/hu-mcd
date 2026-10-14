@@ -1,3 +1,11 @@
+## 2026-09-24 当前：A线补跑验收完成 / Fixed-slot completion accepted
+
+部署28889386与四类28889387/28889388/28889389/28889391均COMPLETED0:0；四GPU作业耗时29/26/28/39秒，共122 GPU秒（按Slurm elapsed相加，不是GPU利用率）。完整执行提交`4551aa8f817a066e18424264407204f3c25aab17`。本地收集哈希、模型/精度/输入/概念基身份、原identity/r1逐字节复用、掩码几何、分配/重构、占位输出丢弃验收通过。6个原槽位控制batch共48行特征差为0；6个空片段保持NaN/-1，分母未变。十类五条件28435/28435片段条件记录完整。原失败与机制不确定性保留；没有新的提交、SAM、拟合、调参或放宽容差。
+
+All ten classes/five conditions accepted. Equal-class means after within-image/within-class averaging: identity100%; erosion1 **78.2522%**, erosion2 **68.6089%**, dilation1 **80.8992%**, dilation2 **74.5703%**. Assignment stability only, not segmentation accuracy or human interpretability. Old six-class summaries remain historical. Known np.bool8 warnings retained. No further repair experiment is needed; later scientific comparisons require their own protocol/authorization.
+
+证据/Evidence: `artifacts/bunya/robustness-completion-20260924/acceptance.json`, `final-sacct.psv`, merged `robustness-*.csv`, `warnings-and-events.json`. Canonical report: `artifacts/bunya/ten-class-review/report/robustness.html`; scoped generator `scripts/research_hub/robustness_completion.py`; other medical/baseline branches and reviews retained.
+
 # ROB26-007 — fixed-slot completion / 保持槽位的补跑
 
 The user's “好 那我们试试” explicitly approves trying the proposed engineering correction and completing the four failed classes. Scope is the existing five-condition protocol, fixed models/concepts/precision/input manifests; no SAM, refitting, threshold relaxation or expansion. Original failures remain. This is a one-time corrected submission, not permission to retry again.

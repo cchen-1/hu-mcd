@@ -1,3 +1,87 @@
+## 2026-09-24 当前：A线补跑验收完成 / Fixed-slot completion accepted
+
+部署28889386与四类28889387/28889388/28889389/28889391均COMPLETED0:0；四GPU作业耗时29/26/28/39秒，共122 GPU秒（按Slurm elapsed相加，不是GPU利用率）。完整执行提交`4551aa8f817a066e18424264407204f3c25aab17`。本地收集哈希、模型/精度/输入/概念基身份、原identity/r1逐字节复用、掩码几何、分配/重构、占位输出丢弃验收通过。6个原槽位控制batch共48行特征差为0；6个空片段保持NaN/-1，分母未变。十类五条件28435/28435片段条件记录完整。原失败与机制不确定性保留；没有新的提交、SAM、拟合、调参或放宽容差。
+
+All ten classes/five conditions accepted. Equal-class means after within-image/within-class averaging: identity100%; erosion1 **78.2522%**, erosion2 **68.6089%**, dilation1 **80.8992%**, dilation2 **74.5703%**. Assignment stability only, not segmentation accuracy or human interpretability. Old six-class summaries remain historical. Known np.bool8 warnings retained. No further repair experiment is needed; later scientific comparisons require their own protocol/authorization.
+
+证据/Evidence: `artifacts/bunya/robustness-completion-20260924/acceptance.json`, `final-sacct.psv`, merged `robustness-*.csv`, `warnings-and-events.json`. Canonical report: `artifacts/bunya/ten-class-review/report/robustness.html`; scoped generator `scripts/research_hub/robustness_completion.py`; other medical/baseline branches and reviews retained.
+
+## 2026-09-24 A线已授权保持batch槽位补跑 / Fixed-slot completion submitted
+
+用户“好 那我们试试”批准本次四类修正提交。部署 **28889386**；Airliner **28889387**、Hummingbird **28889388**、Container Ship **28889389**、Beach Wagon **28889391**。完整执行提交 `4551aa8f817a066e18424264407204f3c25aab17` 已推送。每类1L40S/4CPU/16GiB/20min/1GiB，两资源lane、本批最多两GPU；部署1CPU/1GiB/5min。原identity0/erosion1缓存复用；只计算缺失三个条件。原槽位的原始输入仅占位，输出丢弃，空区域保持NaN/-1且分母不变。不放宽阈值、不变精度、不重跑SAM/拟合。
+
+Submitted, NOT accepted. First/onlypostcheck:deploymentRUNNING,fourGPUjobsPENDING/Dependency. Wait user completion notice before collection; no further polling or automaticretry. BothlocaltestsPASS; GPUentrycontrol remainsrequired. Oldfailures retained. Figure at `report/robustness.html?lang=en` fixed and browser-checked; displayedresults are still previousaccepteddata. Othermedical/baseline branches below remain unchanged. Evidence: `artifacts/bunya/robustness-completion-20260924/`; protocol [ROB26-007](ROBUSTNESS_COMPLETION_20260924.zh-en.md).
+
+## 2026-09-24 当前：Derm7pt拟合28889071工程验收通过 / Current acceptance
+
+28889071COMPLETED0:0/4分39秒/MaxRSS6310204K，433文件本地校验通过。101/101图顺序和身份、2886SAM候选→423保留区域、原/有效掩码及特征映射全部通过；72零特征排除拟合、351有效片段；5初始cluster→3学习概念（8/33/21维）+1986维补空间。最终分配62/106/45/138；completeness0.78525。全423片段及101图分类头代数通过，概念+补空间重构各8保存样例通过，不声称全量分解检查。C003的118初始成员有78最终分给补空间，需语义审阅；有限AI检查见C001边框例，未改规则。101图无掩码缺失或全零图。当前MEL预测34/101，是拟合队列描述，不是独立外部概念验证。
+
+Engineering acceptance only; no new predictions,training,retries or evaluation submitted. All101cases fit the concepts;zeroheld-out. Stable IDsHUMCD-DERM7PT-R101-MEL-C001..003;complement separate. Human semantics andclinical relevance remain unverified. Evidence: `artifacts/bunya/ham-derm-discovery-20260924/discovery-acceptance.json`, `discovery-concepts.csv`, `cluster-to-final.csv`;generator `scripts/accept_derm_fitting.py`. Local first replay failure omitted original PythonRNG;seed43fixed-order replay is pixel-exact,history retained(DERMFIT26-002). Original-resolution additional image export was rejected by automatic approval;report uses previously collected truepre-SAMinputs,explicitly labelled(DERMFIT26-005).
+
+Canonical report gains `medical-ham-derm/index.html` under the existing entry,with128traceable example selections/108panels and human-reviewCSV;no prior results or review keys replaced. No medical experiment is pending after this batch. Next useful work is human concept review and an explicitly approved evaluation protocol;do not silently treat these101fitting cases as held-out.
+
+## 2026-09-24 最新：HAM分类器已验收；Derm7pt拟合28889071已提交
+
+28885816COMPLETED0:0/12m30s/MaxRSS3309832K。72份索引文件全部本地验收；50轮、6450次更新、410750次训练图片访问，逐轮无重复/缺失；验证集选中epoch27，五项适配/分类头代数检查通过。源域测试准确率89.32%、平衡准确率68.97%、MEL45/70。仅验收固定模型的工程完整性，不认证医学适用性，不调参或重训。报告与原始证据：`artifacts/bunya/ham-derm-discovery-20260924/classifier-results.zh-en.md`及`classifier-acceptance.json`，含类别分母、曲线、混淆矩阵。
+
+Derm7pt正式拟合 **28889071** 已提交，执行版本 **649ce176c7d2e4e17b9e9be196fb0e7c33ef3e42** 已推送；固定epoch27checkpoint SHA256`bee957a2a13b894ea12a6f41cc9d5b38f206fc65b4a60fd1ebd81446099c0d37`；1L40S/8CPU/32GiB/1小时/8GiB。R101全部101用于拟合、0留出；保留SAM前短边300原比例，未新增224方图。发布算法、原阈值、mincluster50、outlierquantile1.0不变。旧E224掩码不复用；旧实验与失败历史不改动。10项局部软件测试通过，没有SAMprobe。test-only虚拟编号28889051不是提交作业。
+
+Classifier engineering acceptance PASSED, with class-dependent limitations. Discovery SUBMITTED, not completed or accepted. New adapters bind identities, nonsquare geometry, stable method/cohort concept IDs and fit-only roles; the released science modules are unchanged. Raw masks/features/clusters/assignments/reconstruction evidence will be retained. No held-out inference, retraining, retries, budget extension or new evaluation. Await user completion notice before collecting28889071. Failure must be reported without resubmission.
+
+## 2026-09-24 当前：输入已验收，HAM分类器28885816已提交 / Current
+
+MED26-HAM-DERM-DISCOVERY-01：28883445COMPLETED0:0/158秒/MaxRSS2307524K，110份本地文件哈希、101例非方形SAM输入及24项张量检查通过；1.5GB分类器缓存留scratch，由训练worker读取前核验SHA256。无SAM前224方图。正式分类器 **28885816** 已提交，完整执行提交 **4a7360c31e41fb88f94734b0cd8167ae497c9b42** 已推送；1L40S/4CPU/16GiB/1小时/5GiB上限，50epochs/batch64/trainingseed43/普通CE/原精度。调度test-only通过，虚拟编号28885804不是实际作业。不会自动重提、延长或扩容。
+
+Input preparation is accepted; classifier training is submitted, NOT completed or accepted. Derm7pt discovery has not been submitted; it needs the new classifier checkpoint and adapter acceptance. All101R101cases remain authorized for fitting,0heldout; no old checkpoint substitution. Wait for user completion notice before collection. Evidence: `artifacts/bunya/ham-derm-discovery-20260924/{inputs-acceptance.json,classifier.submission.json,classifier-release.json,classifier-preparation-tests.log}`. Historical statuses below remain historical.
+
+## 2026-09-24 新分支批准入口 — MED26-HAM-DERM-DISCOVERY-01
+
+HAM训练ResNet50→Derm7pt R101全部101例拟合概念获批；无本轮Derm7pt留出，不新增加权CE或调参。原始HAM下载至独立Downloads并scp到scratch获批。评价后补；旧400/70发现与E224转移结果保持。此项只替代新分支的数据角色，不抹去历史。执行与准备证据见[集中记录](HAM_DERM7PT_DISCOVERY_20260924.zh-en.md)。
+
+## 2026-09-23 当前验收 / Current acceptance
+
+外部部署28796207及推理28796209均COMPLETED0:0（6秒/3分16秒），524文件收集校验通过；101例全部完成，29/101预测MEL，296片段中37零特征，C00194/259有效片段。固定输入/权重/概念基与24项描述性统计验收通过；医学适用性、语义、空间定位与患者独立性未获证明。A仍6完整/4部分失败，未补跑。当前无待收集的E224作业，没有新增作业/重训/重提。
+
+External jobs28796207/28796209 completed0:0(6s/196s);524files verified,all101cases processed,MEL29/101,37zero-feature regions,C00194/259validregions. Frozen input/model/basis and24descriptive comparisons accepted; clinical utility,semantic/localization validity andpatientindependence remain unestablished. Aremains6complete/4partialfailed withoutretry. No E224 jobawaitingcollection andnonewjobthisturn.
+
+当前证据与双语结果：[外部验收报告](MEDICAL_EXTERNAL_RESULTS_20260923.zh-en.md)、`artifacts/bunya/medical-external-results-20260923/acceptance.json`。本节替代下方历史“外部已提交未收集”状态，不增加任何新实验授权；保留所有旧失败与后续成功历史。
+
+## 2026-09-22 本批验收及E224实际提交 / Batch acceptance and E224 submission
+
+本批最终验收：A十类原batch不变对照与侵蚀r1通过，r1图片级类内平均再十类等权平均78.25%；6类五条件完整，4类r2缩批对照失败，6612后续region-condition缺失。医学D1 28792059完成400/70，3初始cluster→1学习概念（32维），训练514/849、留出82/143分配该概念；零特征68/917和14/157，原始证据完整，重构/映射通过。外部E224批准并提交：部署28796207、推理28796209，版本dcc61934973aa9054a4e689ccf2334652447c575；首次核对待依赖，尚未收集/验收。失败A未重提；不等待新作业。
+
+Final batch acceptance: all10 original-batch identity and radius1erosion controls complete; equal-class image-mean retention78.25%. Six classes complete5conditions; four fail reduced-batch controls at radius2, leaving6612region-condition slots missing. MedicalD128792059 completes400/70images:3initial clusters→1learned32-dimensional concept;514/849training and82/143held-out assignments;68/917and14/157zero features preserved. Masks/IDs/reconstruction accepted. ApprovedE224submitted: deployment28796207,inference28796209,commitdcc61934973aa9054a4e689ccf2334652447c575; pendingdependency at the first check, notcollected/accepted. FailedAjobs not retried; no waiting for new jobs.
+
+当前证据：[本批结果与限制](BATCH_RESULTS_20260922.zh-en.md)、[E224完整协议](MEDICAL_EXTERNAL_EXECUTION_20260922.zh-en.md)、`artifacts/bunya/batch-review-20260922/acceptance-both.json`。以下旧“待提交/未授权/未完成”等均为历史快照；成功不删除失败历史。用户通知新批次完成后才收集。
+
+## 2026-09-22 最新D1成功提交 / Latest successful D1 submission
+
+D1已成功提交：28792059，提交后唯一状态核对为PENDING，尚未运行完成或验收。代码5623abe8a843deaea7ab838a8c76c41afbad565e，qos=short，1L40S/8CPU/32GiB/2h/15GiB。部署28790767及D0 28790768均成功，现有凭据已核对；仅移除失效调度afterok，保留运行时版本、D0成功/清单/输入/权重哈希和GPU适配门槛。此前QoS和过期依赖两次拒绝完整保留（MED26-016/017）。没有重提部署或D0，不等待实验完成；用户通知后再收集验收。
+
+D1successfully submitted as28792059; PENDING at the sole post-submission check, not completed or accepted. Commit5623abe8a843deaea7ab838a8c76c41afbad565e, qosshort,1L40S/8CPU/32GiB/2h/15GiB. Completed deployment28790767 and D028790768receipts verified. Only expired schedulerafterokreferences removed; runtime commit/D0PASS/manifest/input/weight/GPUadapter gates retained. Both prior submission rejections remain (MED26-016/017). Deployment/D0not repeated. Stop waiting; collect after user completion notice.
+
+以下待重提文字为历史快照，不覆盖本次成功提交；资源及科学配置不变，外部推理和分类器重训仍未授权。
+
+## 2026-09-22 最新：D1第二次提交被拒，未运行 / Latest: second D1 submission rejected
+
+D1最新：获准的QoS修正重提被Slurm再次拒绝（Job dependency problem），未创建作业。部署28790767与D0 28790768均COMPLETED0:0（6秒/29秒），但已退出控制器活动记录，原afterok失效。已核验Slurm生成的部署/D0凭据；仅移除失效调度依赖的方案已通过sbatch --test-only（不是提交，预估编号不是实际作业）。同版本/科学配置/资源/运行时输入和GPU适配门槛保持不变；等待用户批准再提交一次，不自动重提（MED26-017）。
+
+Latest D1: the authorized QoS-only retry was rejected for Job dependency problem; no job created. Deployment28790767 and D028790768 both completed0:0 (6s/29s), but their records left the active controller, invalidating old afterok references. Compute-generated readiness/input receipts verified. A plan removing only expired scheduler references passed sbatch --test-only (no submission; its estimated ID is not a real job). Same commit/scientific config/resources and runtime input/GPU-adapter gates retained. Await one-time resubmission approval; no automatic retry (MED26-017).
+
+完整版本仍为`5623abe8a843deaea7ab838a8c76c41afbad565e`；GPU上限1L40S/8CPU/32GiB/2h/15GiB。已准备具体更正`artifacts/bunya/medical-discovery-20260922/D1-expired-dependency-correction.json`，未第三次提交；不要把test-only预估编号28791892当作已提交作业。下方旧“QoS待修正”等属历史。
+
+
+## 2026-09-22 D0/D1最新状态 / Current discovery state
+
+用户已批准D0+D1+部署；固定epoch10，独立RandomState43与病灶/图片排序规则400病灶各1图，全部70held-out不变。完整执行版本 `5623abe8a843deaea7ab838a8c76c41afbad565e` 已推送。医学发现预算上限1L40S/8CPU/32GiB/2h/15GiB；D0为1CPU/4GiB/10min/0.5GiB；部署1CPU/1GiB/5min。外部推理仍未授权。
+
+- 部署 **28790767**：COMPLETED0:0/6s；部署就绪门槛在Slurm内执行。
+- D0 **28790768**：已提交；唯一提交后核对时RUNNING。尚未收集/验收，不以已完成选样计划代替图片验收。
+- D1：**未成功提交、无作业ID**。助手误填gpu_cuda的QoS为normal，Slurm明确拒绝；队列/会计未发现该任务。仅改QoS为既有short的计划/script已准备，科学配置/版本/资源上限/依赖均不变。按“失败不自动重提”，等待用户批准重提一次；原拒绝回执保留（MED26-016）。
+- MED26-015：原“1%离群”和“cluster搜索”为文档错误。保持outlier_percentile1.0（100%分位点，有限行无该离群剔除）及int(mean+std)原启发式；SAM1%面积阈值是独立规则。
+
+Latest actual status and exact receipts: `artifacts/bunya/medical-discovery-20260922/handover.json`. D0 remains independently submitted; D1 is not queued and its QoS-only retry requires explicit permission. Do not resubmit deployment or D0. Do not wait/poll for completion; collect only after user notice.
+
 # 当前状态与集中决定 / Current state and decisions
 
 <!-- APPROVED-20260922:BEGIN -->
@@ -19,6 +103,22 @@ The user explicitly approved H and M execution with the stated deployment budget
 
 Actual authorization, config hashes and submission receipts: `artifacts/bunya/medical-approved-20260922/`. Approved configuration copies: `configs/medical/*.approved.json`; historical `.proposed.json` are preserved. The actual resolved job config and full execution commit are additionally bound in each launch plan. Status below this block reflects historical proposals until specifically superseded here.
 <!-- APPROVED-20260922:END -->
+
+<!-- MEDICAL-EXEC-CURRENT:BEGIN -->
+## 2026-09-22 最新验收 / Latest acceptance
+
+- 部署28781904、H28781914、M28781915均COMPLETED0:0，Slurm耗时6s / 88s / 782s。刷新凭据和完整收集：`artifacts/bunya/medical-results-20260922/`。部署验收复用，不重新运行。
+- 执行完整commit `00f06dc549439db92e4842cb5ecd761f9b38bc43`；本地验收脚本不改变已执行源码。H/M输入、实际配置、checkpoint/数组/映射均通过工程验收，见`acceptance.json`；医学适用性单独判断。
+- H计划10,125,165对×每hash8方向全部完成；0 native / 0 canonical224精确匹配。5913候选含4291阈值候选；R101中214阈值对涉及20病例，源train/val/test=180/12/22。不是确认重复；全部并排图片及人工表保持未审阅，不自动排除。
+- M50轮/6450更新/410750训练图次完整；验证宏AUC选中epoch10，SHA256 `07a6f65dbb23eb7c97510bef09c4b624a1a86007b27a64e324151fd1dfd2a655`；test accuracy88.9976%、balanced59.6981%、macroAUC0.968671，MEL50/70（61病灶）、precision50/89、AUC0.944104。
+- MED26-012：DF验证0/5、测试0/8召回，整个val/test均无DF argmax；不是已确认代码错误。MED26-013：后期train loss下降而val loss上升，固定epoch10不变，不重训。MED26-014：GPU利用率/显存峰值和train accuracy未记录，不编造。
+- R101/S仍仅评价协议批准；医学发现和外部推理**未执行、未授权**。下一批源域400病灶/70held-out的具体提案与预算见`docs/MEDICAL_RESULTS_20260922.zh-en.md`，不因本次验收升级为批准。
+- 本轮无新实验/预测/远端处理作业/选样。私有原报告增量更新，既有157概念页、审阅与历史证据保留。
+
+All three jobs completed; both H retrieval and M classifier passed engineering acceptance with explicit research limitations. H candidates await human identity review. The frozen M model supports a conditional case-study proposal, not clinical or seed-stability certification. New medical discovery and external inference remain unapproved; no jobs were submitted this turn.
+<!-- MEDICAL-EXEC-CURRENT:END -->
+
+
 
 
 2026-09-22 Brisbane. Current source of truth: scheduler snapshot, acceptance receipts and explicit user decisions, reconciled in `artifacts/bunya/next-phase-20260922/authorization-ledger.json`. Historical failed jobs remain evidence; they do not supersede later successful acceptance.
@@ -136,3 +236,18 @@ H与M可以独立推进；R/S选择不阻塞M。医学概念发现与外部执�
 本地18项针对性软件检查通过（10项新增，8项既有回归）；范围包括合成数据/掩码、资源授权门槛、图次/LR、选择与test门槛、缺失/零/对比方向等。初次Python3.9 `int.bit_count`兼容错误已修正并保留失败日志。**这不等于Bunya/GPU训练或模型适配已验收**；GPU适配检查嵌入未来获批的同一个M作业，不加额外SAM probe。已固定本地源码提交`227eedf5a51c2c8dfd93b03f205e67347f4a248e`，未推送/未部署；两份launcher仅生成预览、未提交。具体源码哈希、检查日志与提交状态见`artifacts/bunya/next-phase-20260922/preparation/`。
 
 <!-- FINAL-PROTOCOL:END -->
+
+
+### 已归档提交摘要 / Archived submission summary
+
+## 2026-09-22 实际提交 / Actual submissions
+
+- 完整执行commit：`00f06dc549439db92e4842cb5ecd761f9b38bc43`，已推送fork/reproduction并通过Slurm部署；此前`227eedf5`科学实现与协议保持一致。
+- 共同部署 **28781904**：COMPLETED0:0，6秒；实际release/launcher/config哈希及H/M独立可读性/环境检查PASS。请求1CPU/1GiB/5min；调度记录AllocCPUS2、billing1，不是请求扩容（MED26-010）。不等于M GPU适配或医学适用性通过。
+- **H：28781914**，已取得sbatch成功回执；4CPU/8GiB/30min/0GPU/2GiB输出。
+- **M：28781915**，已取得sbatch成功回执；1L40S/4CPU/16GiB/4h/5GiB输出，50轮/batch64/训练seed43，FP32/TF32和固定配置不变。
+- 两者仅`afterok:28781904`，没有H→M或M→H依赖。独立输出`/scratch/user/uqcche38/hu-mcd/outputs/workstreams/<jobID>`；实际plan/config/protocol/launcher哈希及提交回执在`artifacts/bunya/medical-approved-20260922/`。
+- 状态仅为**已提交、未收集、未验收**；本轮停止等待实验完成。用户通知后再收集。失败不自动重提或扩容。
+- R101/S仅协议批准；医学发现、外部推理仍未授权。M完成后区分工程验收与研究适用性，报告七类/melanoma表现与训练曲线，再提出发现预算；不因低分重训。
+
+Both H and M were submitted independently against the same verified release. Submission is not completion or acceptance. Wait for the user's completion notification before collecting results. R101/S approve protocols only; no medical discovery/external inference. Report class-level/melanoma metrics and learning curves separately from engineering acceptance before proposing discovery resources.

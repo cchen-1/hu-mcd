@@ -2,6 +2,28 @@
 
 Recorded 2026-09-24 Australia/Brisbane. Stable decision ID: MED26-HAM-DERM-DISCOVERY-01.
 
+## 2026-09-24 当前：Derm7pt拟合28889071工程验收通过 / Current acceptance
+
+28889071COMPLETED0:0/4分39秒/MaxRSS6310204K，433文件本地校验通过。101/101图顺序和身份、2886SAM候选→423保留区域、原/有效掩码及特征映射全部通过；72零特征排除拟合、351有效片段；5初始cluster→3学习概念（8/33/21维）+1986维补空间。最终分配62/106/45/138；completeness0.78525。全423片段及101图分类头代数通过，概念+补空间重构各8保存样例通过，不声称全量分解检查。C003的118初始成员有78最终分给补空间，需语义审阅；有限AI检查见C001边框例，未改规则。101图无掩码缺失或全零图。当前MEL预测34/101，是拟合队列描述，不是独立外部概念验证。
+
+Engineering acceptance only; no new predictions,training,retries or evaluation submitted. All101cases fit the concepts;zeroheld-out. Stable IDsHUMCD-DERM7PT-R101-MEL-C001..003;complement separate. Human semantics andclinical relevance remain unverified. Evidence: `artifacts/bunya/ham-derm-discovery-20260924/discovery-acceptance.json`, `discovery-concepts.csv`, `cluster-to-final.csv`;generator `scripts/accept_derm_fitting.py`. Local first replay failure omitted original PythonRNG;seed43fixed-order replay is pixel-exact,history retained(DERMFIT26-002). Original-resolution additional image export was rejected by automatic approval;report uses previously collected truepre-SAMinputs,explicitly labelled(DERMFIT26-005).
+
+Canonical report gains `medical-ham-derm/index.html` under the existing entry,with128traceable example selections/108panels and human-reviewCSV;no prior results or review keys replaced. No medical experiment is pending after this batch. Next useful work is human concept review and an explicitly approved evaluation protocol;do not silently treat these101fitting cases as held-out.
+
+## 2026-09-24 最新：HAM分类器已验收；Derm7pt拟合28889071已提交
+
+28885816COMPLETED0:0/12m30s/MaxRSS3309832K。72份索引文件全部本地验收；50轮、6450次更新、410750次训练图片访问，逐轮无重复/缺失；验证集选中epoch27，五项适配/分类头代数检查通过。源域测试准确率89.32%、平衡准确率68.97%、MEL45/70。仅验收固定模型的工程完整性，不认证医学适用性，不调参或重训。报告与原始证据：`artifacts/bunya/ham-derm-discovery-20260924/classifier-results.zh-en.md`及`classifier-acceptance.json`，含类别分母、曲线、混淆矩阵。
+
+Derm7pt正式拟合 **28889071** 已提交，执行版本 **649ce176c7d2e4e17b9e9be196fb0e7c33ef3e42** 已推送；固定epoch27checkpoint SHA256`bee957a2a13b894ea12a6f41cc9d5b38f206fc65b4a60fd1ebd81446099c0d37`；1L40S/8CPU/32GiB/1小时/8GiB。R101全部101用于拟合、0留出；保留SAM前短边300原比例，未新增224方图。发布算法、原阈值、mincluster50、outlierquantile1.0不变。旧E224掩码不复用；旧实验与失败历史不改动。10项局部软件测试通过，没有SAMprobe。test-only虚拟编号28889051不是提交作业。
+
+Classifier engineering acceptance PASSED, with class-dependent limitations. Discovery SUBMITTED, not completed or accepted. New adapters bind identities, nonsquare geometry, stable method/cohort concept IDs and fit-only roles; the released science modules are unchanged. Raw masks/features/clusters/assignments/reconstruction evidence will be retained. No held-out inference, retraining, retries, budget extension or new evaluation. Await user completion notice before collecting28889071. Failure must be reported without resubmission.
+
+## 2026-09-24 当前：输入已验收，HAM分类器28885816已提交 / Current
+
+MED26-HAM-DERM-DISCOVERY-01：28883445COMPLETED0:0/158秒/MaxRSS2307524K，110份本地文件哈希、101例非方形SAM输入及24项张量检查通过；1.5GB分类器缓存留scratch，由训练worker读取前核验SHA256。无SAM前224方图。正式分类器 **28885816** 已提交，完整执行提交 **4a7360c31e41fb88f94734b0cd8167ae497c9b42** 已推送；1L40S/4CPU/16GiB/1小时/5GiB上限，50epochs/batch64/trainingseed43/普通CE/原精度。调度test-only通过，虚拟编号28885804不是实际作业。不会自动重提、延长或扩容。
+
+Input preparation is accepted; classifier training is submitted, NOT completed or accepted. Derm7pt discovery has not been submitted; it needs the new classifier checkpoint and adapter acceptance. All101R101cases remain authorized for fitting,0heldout; no old checkpoint substitution. Wait for user completion notice before collection. Evidence: `artifacts/bunya/ham-derm-discovery-20260924/{inputs-acceptance.json,classifier.submission.json,classifier-release.json,classifier-preparation-tests.log}`. Historical statuses below remain historical.
+
 ## 2026-09-24 当前验收与正式训练 / Current acceptance and classifier execution
 
 **28883445 ACCEPTED_INPUTS_MODEL_NOT_RUN**: COMPLETED0:0,158s,MaxRSS2307524K. Local verification covers110indexed artifacts (all except1.5GBNPZ),101RGBlosslesspre-SAMimages and unchanged fixedR101identities,10,015classifiermanifest rows and24exacttensorchecks. Large classifier cache remains on scratch and is SHA256-bound before model loading. Evidence: `artifacts/bunya/ham-derm-discovery-20260924/inputs-acceptance.json`.
