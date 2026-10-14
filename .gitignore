@@ -173,11 +173,30 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-# Local Bunya collection snapshots (may contain licensed image derivatives)
-/artifacts/bunya/
-
-# Local NotebookLM pilot sources and query results
-/artifacts/notebooklm/
-
-# Local experiment outputs; keep licensed image derivatives out of Git
+# Private research evidence, local reports, exports and historical snapshots.
+# These require verified storage backups; ignoring them is NOT a backup.
+/artifacts/
 /outputs/
+
+# Local data/model staging, never source code.
+/data/
+/datasets/
+/models/
+/checkpoints/
+*.npy
+*.npz
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.h5
+*.hdf5
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+
+# Local service authentication/browser state (wrapper source stays tracked).
+/tools/notebooklm/state/
+/tools/notebooklm/browser-profile/
