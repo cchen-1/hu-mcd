@@ -214,8 +214,12 @@ def run(config,out):
         if report['status']!='PASS':raise ValueError('Auditor did not pass')
         expected=dict(train=8215,val=573,test=1227)
         if {s:r['images'] for s,r in report['splits'].items()}!=expected:raise ValueError('Unexpected published split counts')
-        rows=list(csv.DictReader((dataset/'raw/DermaMNIST-C.csv').open()));byid={r['image_id']:r for r in rows}
-        pairs=list(csv.DictReader((provenance/'author_confirmed_duplicates.csv').open()));cross=[]
+        with (dataset/'raw/DermaMNIST-C.csv').open() as f:
+            rows=list(csv.DictReader(f))
+        byid={r['image_id']:r for r in rows}
+        with (provenance/'author_confirmed_duplicates.csv').open() as f:
+            pairs=list(csv.DictReader(f))
+        cross=[]
         for p in pairs:
             a,b=Path(p['from_img']).stem,Path(p['to_img']).stem
             if a not in byid or b not in byid:raise ValueError('Author duplicate ID absent from metadata')
